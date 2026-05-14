@@ -364,6 +364,16 @@
       .heroTitle{font-size:1.1rem}
       .heroBadge{font-size:.66rem;padding:4px 7px}
     }
+  
+.pin-dots{display:flex;justify-content:center;gap:14px;margin-bottom:24px}
+.pin-dot{width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,0.05);border:2px solid rgba(255,255,255,0.15);transition:all .15s}
+.pin-dot.filled{background:var(--accent);border-color:var(--accent);box-shadow:0 0 10px rgba(108,99,255,.5)}
+.pin-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:240px;margin:0 auto 14px}
+.pin-key{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px;font-size:1.4rem;font-weight:800;cursor:pointer;color:#fff;transition:all .1s}
+.pin-key:hover{background:rgba(255,255,255,0.08);border-color:var(--accent);transform:scale(1.05)}
+.pin-key:active{transform:scale(0.95)}
+.pin-err-msg{font-size:.85rem;color:var(--danger);min-height:20px;margin-bottom:12px;font-weight:700}
+
   </style>
   <link rel="manifest" href="/calendar2026/manifest.json">
   <meta name="theme-color" content="#b51a00">
@@ -595,7 +605,7 @@
     };
 
     var DEFAULT_SETTINGS = {weekStartsMonday:false,showHero:true,showStats:true,showProfileGateOnLaunch:true};
-    var DEFAULT_SYNC = {gistId:'',githubToken:'',autoSync:false,lastSyncAt:''};
+    var DEFAULT_SYNC = {gistId:'0cc0ace61e43ab7603606b686217211c',githubToken:'',autoSync:false,lastSyncAt:'',encryptedToken:'VlpCb0l7A3N0eWFmCXRbdEJAdWJURUJ1c2ZbYWsGSFp8AgBYc35EXw=='};
 
     var state = {
       currentUser:'conan',
@@ -1416,7 +1426,33 @@
         catch(e){
           try{
             var w=window.open('','_blank');
-            if(w){ w.document.write('<html><head><title>印刷</title></head><body>'); w.document.write(document.getElementById('content').innerHTML); w.document.write('</body></html>'); w.document.close(); w.focus(); w.print(); setTimeout(function(){w.close();},1000); }
+            if(w){ w.document.write('<html><head><title>印刷</title></head><body>'); w.document.write(document.getElementById('content').innerHTML); w.document.write('
+  <div class="profileGate" id="pinGate" style="z-index:200;">
+    <div class="gateBg"></div>
+    <div class="gateInner">
+      <div class="gateBrand">SECURITY LOCK</div>
+      <h1 class="gateTitle" style="margin-bottom:20px;">Enter PIN</h1>
+      <div class="pin-dots" id="pinDots">
+        <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+      </div>
+      <div class="pin-err-msg" id="pinErr"></div>
+      <div class="pin-keypad" id="pinKeypad">
+        <button class="pin-key" onclick="inputPin(1)">1</button>
+        <button class="pin-key" onclick="inputPin(2)">2</button>
+        <button class="pin-key" onclick="inputPin(3)">3</button>
+        <button class="pin-key" onclick="inputPin(4)">4</button>
+        <button class="pin-key" onclick="inputPin(5)">5</button>
+        <button class="pin-key" onclick="inputPin(6)">6</button>
+        <button class="pin-key" onclick="inputPin(7)">7</button>
+        <button class="pin-key" onclick="inputPin(8)">8</button>
+        <button class="pin-key" onclick="inputPin(9)">9</button>
+        <div></div>
+        <button class="pin-key" onclick="inputPin(0)">0</button>
+        <button class="pin-key" onclick="clearPin()">C</button>
+      </div>
+    </div>
+  </div>
+</body></html>'); w.document.close(); w.focus(); w.print(); setTimeout(function(){w.close();},1000); }
           }catch(e2){toast('印刷に失敗しました');}
         }
       },150);
@@ -1543,6 +1579,37 @@
 
     init();
   })();
+  
+    var currentPin = '';
+    function xorStr(str, pin) {
+      var res = '';
+      for(var i=0; i<str.length; i++) res += String.fromCharCode(str.charCodeAt(i) ^ pin.charCodeAt(i % pin.length));
+      return res;
+    }
+    function inputPin(n) {
+      if(currentPin.length < 4) currentPin += n;
+      updatePinDots();
+      if(currentPin.length === 4) verifyPin();
+    }
+    function clearPin() { currentPin = ''; updatePinDots(); document.getElementById('pinErr').textContent = ''; }
+    function updatePinDots() {
+      var dots = document.querySelectorAll('#pinDots .pin-dot');
+      dots.forEach(function(d, i) { d.classList.toggle('filled', i < currentPin.length); });
+    }
+    function verifyPin() {
+      try {
+        var decoded = xorStr(atob(state.sync.encryptedToken), currentPin);
+        if(decoded.startsWith('ghp_') || decoded.startsWith('github_pat_')) {
+          state.sync.githubToken = decoded; 
+          document.getElementById('pinGate').classList.remove('open');
+          pullFromGist(false);
+        } else { throw new Error(); }
+      } catch(e) {
+        document.getElementById('pinErr').textContent = 'PINが違います';
+        setTimeout(clearPin, 600);
+      }
+    }
+
   </script>
 </body>
 </html>
