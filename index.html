@@ -1160,27 +1160,26 @@
     function closeSettings(){ document.getElementById('settingsSheet').classList.remove('open'); }
     function saveSettings(){
   var isFirstTime = !state.sync.lastSyncAt; 
-  
   state.settings.weekStartsMonday=document.getElementById('settingWeekStartsMonday').checked;
   state.settings.showHero=document.getElementById('settingShowHero').checked;
   state.settings.showStats=document.getElementById('settingShowStats').checked;
   state.settings.showProfileGateOnLaunch=document.getElementById('settingShowProfileGateOnLaunch').checked;
-  state.sync.githubToken=document.getElementById('gistTokenInput').value.trim();
-  state.sync.gistId=document.getElementById('gistIdInput').value.trim();
+  
+  // ★ 保存時も浄化
+  state.sync.githubToken = document.getElementById('gistTokenInput').value.replace(/[^a-zA-Z0-9_-]/g, '');
+  state.sync.gistId = document.getElementById('gistIdInput').value.replace(/[^a-zA-Z0-9_-]/g, '');
   state.sync.autoSync=document.getElementById('settingAutoSync').checked;
   
   saveLocal();
   closeSettings();
   renderAll();
 
-  // 初回（履歴なし）かつGistIDが存在する場合は、強制的に取得(Pull)を走らせる
   if(isFirstTime && state.sync.gistId) {
     pullFromGist(true);
   } else {
     queueAutoSync();
     if(typeof startPolling === 'function') startPolling();
   }
-  
   toast('設定を保存しました ✓');
 }
 
@@ -1217,14 +1216,16 @@
     async function syncToGist(showToast){
   if(showToast===undefined) showToast=true;
 
-  // 設定画面が開いている場合、入力欄のTokenをリアルタイムで読み取る
   if(document.getElementById('settingsSheet').classList.contains('open')){
-    state.sync.githubToken = document.getElementById('gistTokenInput').value.trim();
-    state.sync.gistId = document.getElementById('gistIdInput').value.trim();
+    state.sync.githubToken = document.getElementById('gistTokenInput').value;
+    state.sync.gistId = document.getElementById('gistIdInput').value;
   }
 
+  // ★ 究極の浄化
+  var token = (state.sync.githubToken || '').replace(/[^a-zA-Z0-9_-]/g, '');
+  var gistId = (state.sync.gistId || '').replace(/[^a-zA-Z0-9_-]/g, '');
+
   if(syncInFlight){if(showToast) toast('同期中です...');return;}
-  var token=state.sync.githubToken.trim();
   if(!token){toast('GitHub Tokenを入力してください');return;}
   syncInFlight=true;
   try{
@@ -1236,8 +1237,8 @@
       'X-GitHub-Api-Version':'2022-11-28'
     };
     var url,method,body;
-    if(state.sync.gistId&&state.sync.gistId.trim()){
-      url='https://api.github.com/gists/'+state.sync.gistId.trim(); method='PATCH';
+    if(gistId){
+      url='https://api.github.com/gists/'+gistId; method='PATCH';
       body=JSON.stringify({files:{'the-calendar-sync.json':{content:payload}}});
     }else{
       url='https://api.github.com/gists'; method='POST';
@@ -1248,10 +1249,6 @@
     if(!res.ok){
       var em='Gist APIエラー';
       try{var j=JSON.parse(rawText);em=j.message||em;}catch(e){}
-      if(res.status===401) em='トークンが無効または期限切れです。GitHubで新しいトークンを発行してください';
-      if(res.status===403) em='アクセスが拒否されました。トークンにgistスコープがあるか確認してください';
-      if(res.status===404) em='Gist IDが見つかりません。IDを確認するか空欄にして再保存してください';
-      if(res.status===422) em='Gist IDの形式が正しくありません';
       throw new Error(res.status+': '+em);
     }
     var json; try{json=JSON.parse(rawText);}catch(e){throw new Error('レスポンスのパースに失敗しました');}
@@ -1270,14 +1267,15 @@
     async function pullFromGist(showToast){
   if(showToast===undefined) showToast=false;
 
-  // 設定画面が開いている場合、入力欄のTokenをリアルタイムで読み取る
   if(document.getElementById('settingsSheet').classList.contains('open')){
-    state.sync.githubToken = document.getElementById('gistTokenInput').value.trim();
-    state.sync.gistId = document.getElementById('gistIdInput').value.trim();
+    state.sync.githubToken = document.getElementById('gistTokenInput').value;
+    state.sync.gistId = document.getElementById('gistIdInput').value;
   }
 
-  var token=state.sync.githubToken.trim();
-  var gistId=state.sync.gistId.trim();
+  // ★ 究極の浄化：英数字・アンダーバー・ハイフン以外（見えない文字など）をすべて強制削除
+  var token = (state.sync.githubToken || '').replace(/[^a-zA-Z0-9_-]/g, '');
+  var gistId = (state.sync.gistId || '').replace(/[^a-zA-Z0-9_-]/g, '');
+
   if(!token||!gistId) return;
   if(syncInFlight) return;
   if(showToast) toast('Gistからデータ取得中...');
@@ -1311,10 +1309,8 @@
     var localSavedAt = new Date(state.sync.lastSyncAt || 0).getTime();
 
     if (remoteSavedAt > localSavedAt) {
-      // ローカルの壁紙を保護
       var localConanWall = state.profiles.conan.wallpaper || '';
       var localKaoriWall = state.profiles.kaori.wallpaper || '';
-
       if(data.profiles) {
         state.profiles = data.profiles;
         state.profiles.conan.wallpaper = localConanWall;
@@ -1325,7 +1321,6 @@
 
       state.sync.lastSyncAt = data.savedAt;
       saveLocal();
-      
       if(typeof renderAll === 'function') renderAll();
       updateSyncStatus();
       if(showToast) toast('Gistから最新データを取得しました ↓');
