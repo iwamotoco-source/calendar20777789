@@ -1159,18 +1159,30 @@
     }
     function closeSettings(){ document.getElementById('settingsSheet').classList.remove('open'); }
     function saveSettings(){
-      state.settings.weekStartsMonday=document.getElementById('settingWeekStartsMonday').checked;
-      state.settings.showHero=document.getElementById('settingShowHero').checked;
-      state.settings.showStats=document.getElementById('settingShowStats').checked;
-      state.settings.showProfileGateOnLaunch=document.getElementById('settingShowProfileGateOnLaunch').checked;
-      state.sync.githubToken=document.getElementById('gistTokenInput').value.trim();
-      state.sync.gistId=document.getElementById('gistIdInput').value.trim();
-      state.sync.autoSync=document.getElementById('settingAutoSync').checked;
-      saveLocal();closeSettings();renderAll();
-      queueAutoSync();
-      startPolling(); // 設定保存時にポーリング再起動
-      toast('設定を保存しました ✓');
-    }
+  var isFirstTime = !state.sync.lastSyncAt; 
+  
+  state.settings.weekStartsMonday=document.getElementById('settingWeekStartsMonday').checked;
+  state.settings.showHero=document.getElementById('settingShowHero').checked;
+  state.settings.showStats=document.getElementById('settingShowStats').checked;
+  state.settings.showProfileGateOnLaunch=document.getElementById('settingShowProfileGateOnLaunch').checked;
+  state.sync.githubToken=document.getElementById('gistTokenInput').value.trim();
+  state.sync.gistId=document.getElementById('gistIdInput').value.trim();
+  state.sync.autoSync=document.getElementById('settingAutoSync').checked;
+  
+  saveLocal();
+  closeSettings();
+  renderAll();
+
+  // 初回（履歴なし）かつGistIDが存在する場合は、強制的に取得(Pull)を走らせる
+  if(isFirstTime && state.sync.gistId) {
+    pullFromGist(true);
+  } else {
+    queueAutoSync();
+    if(typeof startPolling === 'function') startPolling();
+  }
+  
+  toast('設定を保存しました ✓');
+}
 
     /* ===== GIST SYNC（修正済み：res.text()方式＋Bearer＋ポーリング） ===== */
     function queueAutoSync(){
@@ -1180,22 +1192,22 @@
     }
 
     function getSyncPayload(){
-      var pConan = Object.assign({}, state.profiles.conan);
-      var pKaori = Object.assign({}, state.profiles.kaori);
-      pConan.wallpaper = '';
-      pKaori.wallpaper = '';
-      return {
-        version: 4, 
-        savedAt: new Date().toISOString(),
-        profiles: { conan: pConan, kaori: pKaori },
-        entries: {
-          conan: state.entries.conan.slice(),
-          kaori: state.entries.kaori.slice(),
-          shared_holidays: state.entries.shared_holidays.slice()
-        },
-        settings: Object.assign({}, state.settings)
-      };
-    }
+  var pConan = Object.assign({}, state.profiles.conan);
+  var pKaori = Object.assign({}, state.profiles.kaori);
+  pConan.wallpaper = '';
+  pKaori.wallpaper = '';
+  return {
+    version: 4, 
+    savedAt: new Date().toISOString(),
+    profiles: { conan: pConan, kaori: pKaori },
+    entries: {
+      conan: state.entries.conan.slice(),
+      kaori: state.entries.kaori.slice(),
+      shared_holidays: state.entries.shared_holidays.slice()
+    },
+    settings: Object.assign({}, state.settings)
+  };
+}
 
     function updateSyncStatus(){
       var el=document.getElementById('gistStatusText');
@@ -1203,115 +1215,130 @@
     }
 
     async function syncToGist(showToast){
-      if(showToast===undefined) showToast=true;
-      if(syncInFlight){if(showToast) toast('同期中です...');return;}
-      var token=state.sync.githubToken.trim();
-      if(!token){toast('GitHub Tokenを入力してください');return;}
-      syncInFlight=true;
-      try{
-        var payload=JSON.stringify(getSyncPayload(),null,2);
-        var headers={
-          'Accept':'application/vnd.github+json',
-          'Content-Type':'application/json',
-          'Authorization':'Bearer '+token,  // Bearer形式
-          'X-GitHub-Api-Version':'2022-11-28'
-        };
-        var url,method,body;
-        if(state.sync.gistId&&state.sync.gistId.trim()){
-          url='https://api.github.com/gists/'+state.sync.gistId.trim(); method='PATCH';
-          body=JSON.stringify({files:{[SYNC_FILE_NAME]:{content:payload}}});
-        }else{
-          url='https://api.github.com/gists'; method='POST';
-          body=JSON.stringify({description:'THE CALENDAR sync',public:false,files:{[SYNC_FILE_NAME]:{content:payload}}});
-        }
-        var res=await fetch(url,{method:method,headers:headers,body:body});
-        var rawText=await res.text(); // 必ずtext()で受け取る
-        if(!res.ok){
-          var em='Gist APIエラー';
-          try{var j=JSON.parse(rawText);em=j.message||em;}catch(e){}
-          if(res.status===401) em='トークンが無効または期限切れです。GitHubで新しいトークンを発行してください';
-          if(res.status===403) em='アクセスが拒否されました。トークンにgistスコープがあるか確認してください';
-          if(res.status===404) em='Gist IDが見つかりません。IDを確認するか空欄にして再保存してください';
-          if(res.status===422) em='Gist IDの形式が正しくありません';
-          throw new Error(res.status+': '+em);
-        }
-        var json; try{json=JSON.parse(rawText);}catch(e){throw new Error('レスポンスのパースに失敗しました');}
-        if(json.id) state.sync.gistId=json.id;
-        state.sync.lastSyncAt=new Date().toISOString();
-        saveLocal();updateSyncStatus();
-        if(showToast) toast('Gistへ保存しました ✓');
-      }catch(e){
-        console.error('syncToGist:',e);
-        if(showToast) toast('保存エラー: '+e.message);
-      }finally{
-        syncInFlight=false;
-      }
+  if(showToast===undefined) showToast=true;
+
+  // 設定画面が開いている場合、入力欄のTokenをリアルタイムで読み取る
+  if(document.getElementById('settingsSheet').classList.contains('open')){
+    state.sync.githubToken = document.getElementById('gistTokenInput').value.trim();
+    state.sync.gistId = document.getElementById('gistIdInput').value.trim();
+  }
+
+  if(syncInFlight){if(showToast) toast('同期中です...');return;}
+  var token=state.sync.githubToken.trim();
+  if(!token){toast('GitHub Tokenを入力してください');return;}
+  syncInFlight=true;
+  try{
+    var payload=JSON.stringify(getSyncPayload(),null,2);
+    var headers={
+      'Accept':'application/vnd.github+json',
+      'Content-Type':'application/json',
+      'Authorization':'Bearer '+token,
+      'X-GitHub-Api-Version':'2022-11-28'
+    };
+    var url,method,body;
+    if(state.sync.gistId&&state.sync.gistId.trim()){
+      url='https://api.github.com/gists/'+state.sync.gistId.trim(); method='PATCH';
+      body=JSON.stringify({files:{'the-calendar-sync.json':{content:payload}}});
+    }else{
+      url='https://api.github.com/gists'; method='POST';
+      body=JSON.stringify({description:'THE CALENDAR sync',public:false,files:{'the-calendar-sync.json':{content:payload}}});
     }
+    var res=await fetch(url,{method:method,headers:headers,body:body});
+    var rawText=await res.text();
+    if(!res.ok){
+      var em='Gist APIエラー';
+      try{var j=JSON.parse(rawText);em=j.message||em;}catch(e){}
+      if(res.status===401) em='トークンが無効または期限切れです。GitHubで新しいトークンを発行してください';
+      if(res.status===403) em='アクセスが拒否されました。トークンにgistスコープがあるか確認してください';
+      if(res.status===404) em='Gist IDが見つかりません。IDを確認するか空欄にして再保存してください';
+      if(res.status===422) em='Gist IDの形式が正しくありません';
+      throw new Error(res.status+': '+em);
+    }
+    var json; try{json=JSON.parse(rawText);}catch(e){throw new Error('レスポンスのパースに失敗しました');}
+    if(json.id) state.sync.gistId=json.id;
+    state.sync.lastSyncAt=new Date().toISOString();
+    saveLocal();updateSyncStatus();
+    if(showToast) toast('Gistへ保存しました ✓');
+  }catch(e){
+    console.error('syncToGist:',e);
+    if(showToast) toast('保存エラー: '+e.message);
+  }finally{
+    syncInFlight=false;
+  }
+}
 
     async function pullFromGist(showToast){
-      if(showToast===undefined) showToast=false;
-      var token=state.sync.githubToken.trim();
-      var gistId=state.sync.gistId.trim();
-      if(!token||!gistId) return;
-      if(syncInFlight) return;
-      if(showToast) toast('Gistからデータ取得中...');
-      try{
-        var headers={
-          'Accept':'application/vnd.github+json',
-          'Authorization':'Bearer '+token,
-          'X-GitHub-Api-Version':'2022-11-28',
-        };
-        var res=await fetch('https://api.github.com/gists/'+gistId+'?t='+Date.now(),{headers:headers});
-        var rawText=await res.text();
-        if(!res.ok){
-          var em2='Gist APIエラー';
-          try{var j2=JSON.parse(rawText);em2=j2.message||em2;}catch(e){}
-          if(res.status===401) em2='トークンが無効または期限切れです';
-          if(res.status===403) em2='アクセスが拒否されました';
-          if(res.status===404) em2='Gist IDが見つかりません';
-          throw new Error(res.status+': '+em2);
-        }
-        var json2; try{json2=JSON.parse(rawText);}catch(e){throw new Error('レスポンスのパースに失敗しました');}
-        var files=json2.files||{};
-        var file=files['the-calendar-sync.json']||Object.values(files)[0];
-        if(!file) throw new Error('同期ファイルが見つかりません');
-        var content=file.content;
-        if(file.truncated&&file.raw_url){ var rr=await fetch(file.raw_url,{}); content=await rr.text(); }
-        if(!content) throw new Error('データが空です');
-        
-        var data; try{data=JSON.parse(content);}catch(e){throw new Error('データのパースに失敗しました');}
+  if(showToast===undefined) showToast=false;
 
-        var remoteSavedAt = new Date(data.savedAt || 0).getTime();
-        var localSavedAt = new Date(state.sync.lastSyncAt || 0).getTime();
+  // 設定画面が開いている場合、入力欄のTokenをリアルタイムで読み取る
+  if(document.getElementById('settingsSheet').classList.contains('open')){
+    state.sync.githubToken = document.getElementById('gistTokenInput').value.trim();
+    state.sync.gistId = document.getElementById('gistIdInput').value.trim();
+  }
 
-        if (remoteSavedAt > localSavedAt) {
-          var localConanWall = state.profiles.conan.wallpaper || '';
-          var localKaoriWall = state.profiles.kaori.wallpaper || '';
-
-          if(data.profiles) {
-            state.profiles = data.profiles;
-            state.profiles.conan.wallpaper = localConanWall;
-            state.profiles.kaori.wallpaper = localKaoriWall;
-          }
-          if(data.entries) state.entries = data.entries;
-          if(data.settings) state.settings = data.settings;
-
-          state.sync.lastSyncAt = data.savedAt;
-          saveLocal();
-          
-          if(typeof renderAll === 'function') renderAll();
-          updateSyncStatus();
-          if(showToast) toast('Gistから最新データを取得しました ↓');
-        } else {
-          if(showToast) toast('データは既に最新です');
-        }
-      }catch(e){
-        console.error('pullFromGist:',e);
-        if(showToast) toast('取得エラー: '+e.message);
-      }finally{
-        syncInFlight=false;
-      }
+  var token=state.sync.githubToken.trim();
+  var gistId=state.sync.gistId.trim();
+  if(!token||!gistId) return;
+  if(syncInFlight) return;
+  if(showToast) toast('Gistからデータ取得中...');
+  try{
+    var headers={
+      'Accept':'application/vnd.github+json',
+      'Authorization':'Bearer '+token,
+      'X-GitHub-Api-Version':'2022-11-28',
+    };
+    var res=await fetch('https://api.github.com/gists/'+gistId+'?t='+Date.now(),{headers:headers});
+    var rawText=await res.text();
+    if(!res.ok){
+      var em2='Gist APIエラー';
+      try{var j2=JSON.parse(rawText);em2=j2.message||em2;}catch(e){}
+      if(res.status===401) em2='トークンが無効または期限切れです';
+      if(res.status===403) em2='アクセスが拒否されました';
+      if(res.status===404) em2='Gist IDが見つかりません';
+      throw new Error(res.status+': '+em2);
     }
+    var json2; try{json2=JSON.parse(rawText);}catch(e){throw new Error('レスポンスのパースに失敗しました');}
+    var files=json2.files||{};
+    var file=files['the-calendar-sync.json']||Object.values(files)[0];
+    if(!file) throw new Error('同期ファイルが見つかりません');
+    var content=file.content;
+    if(file.truncated&&file.raw_url){ var rr=await fetch(file.raw_url,{}); content=await rr.text(); }
+    if(!content) throw new Error('データが空です');
+    
+    var data; try{data=JSON.parse(content);}catch(e){throw new Error('データのパースに失敗しました');}
+
+    var remoteSavedAt = new Date(data.savedAt || 0).getTime();
+    var localSavedAt = new Date(state.sync.lastSyncAt || 0).getTime();
+
+    if (remoteSavedAt > localSavedAt) {
+      // ローカルの壁紙を保護
+      var localConanWall = state.profiles.conan.wallpaper || '';
+      var localKaoriWall = state.profiles.kaori.wallpaper || '';
+
+      if(data.profiles) {
+        state.profiles = data.profiles;
+        state.profiles.conan.wallpaper = localConanWall;
+        state.profiles.kaori.wallpaper = localKaoriWall;
+      }
+      if(data.entries) state.entries = data.entries;
+      if(data.settings) state.settings = data.settings;
+
+      state.sync.lastSyncAt = data.savedAt;
+      saveLocal();
+      
+      if(typeof renderAll === 'function') renderAll();
+      updateSyncStatus();
+      if(showToast) toast('Gistから最新データを取得しました ↓');
+    } else {
+      if(showToast) toast('データは既に最新です');
+    }
+  }catch(e){
+    console.error('pullFromGist:',e);
+    if(showToast) toast('取得エラー: '+e.message);
+  }finally{
+    syncInFlight=false;
+  }
+}
 
     /* ===== ポーリング（30秒ごとに自動pull） ===== */
     function startPolling(){
