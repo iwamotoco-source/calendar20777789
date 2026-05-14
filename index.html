@@ -1217,49 +1217,49 @@
   if(showToast===undefined) showToast=true;
 
   if(document.getElementById('settingsSheet').classList.contains('open')){
-    state.sync.githubToken = document.getElementById('gistTokenInput').value;
-    state.sync.gistId = document.getElementById('gistIdInput').value;
+    state.sync.githubToken = document.getElementById('gistTokenInput').value.trim();
+    state.sync.gistId = document.getElementById('gistIdInput').value.trim();
   }
 
-  // ★ 究極の浄化
-  var token = (state.sync.githubToken || '').replace(/[^a-zA-Z0-9_-]/g, '');
-  var gistId = (state.sync.gistId || '').replace(/[^a-zA-Z0-9_-]/g, '');
+  var token = state.sync.githubToken.trim();
+  var gistId = state.sync.gistId.trim();
 
   if(syncInFlight){if(showToast) toast('同期中です...');return;}
-  if(!token){toast('GitHub Tokenを入力してください');return;}
+  if(!token){if(showToast) toast('GitHub Tokenを入力してください');return;}
   syncInFlight=true;
-  try{
-    var payload=JSON.stringify(getSyncPayload(),null,2);
-    var headers={
-      'Accept':'application/vnd.github+json',
-      'Content-Type':'application/json',
-      'Authorization':'Bearer '+token,
-      'X-GitHub-Api-Version':'2022-11-28'
-    };
-    var url,method,body;
-    if(gistId){
-      url='https://api.github.com/gists/'+gistId; method='PATCH';
-      body=JSON.stringify({files:{'the-calendar-sync.json':{content:payload}}});
-    }else{
-      url='https://api.github.com/gists'; method='POST';
-      body=JSON.stringify({description:'THE CALENDAR sync',public:false,files:{'the-calendar-sync.json':{content:payload}}});
-    }
-    var res=await fetch(url,{method:method,headers:headers,body:body});
-    var rawText=await res.text();
-    if(!res.ok){
-      var em='Gist APIエラー';
-      try{var j=JSON.parse(rawText);em=j.message||em;}catch(e){}
-      throw new Error(res.status+': '+em);
-    }
-    var json; try{json=JSON.parse(rawText);}catch(e){throw new Error('レスポンスのパースに失敗しました');}
-    if(json.id) state.sync.gistId=json.id;
-    state.sync.lastSyncAt=new Date().toISOString();
-    saveLocal();updateSyncStatus();
+  
+  try {
+    // ★ JSON.stringifyのインデントをなくし、通信サイズを極限まで圧縮
+    var payload = JSON.stringify(getSyncPayload()); 
+    var method = gistId ? 'PATCH' : 'POST';
+    var url = gistId ? 'https://api.github.com/gists/' + gistId : 'https://api.github.com/gists';
+    
+    var res = await fetch(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'token ' + token
+      },
+      body: JSON.stringify({
+        description: 'THE CALENDAR sync',
+        public: false,
+        files: { 'the-calendar-sync.json': { content: payload } }
+      })
+    });
+    
+    if(!res.ok) throw new Error('保存エラー: ' + res.status);
+    
+    var json = await res.json();
+    if(json.id) state.sync.gistId = json.id;
+    state.sync.lastSyncAt = new Date().toISOString();
+    saveLocal();
+    updateSyncStatus();
+    
     if(showToast) toast('Gistへ保存しました ✓');
-  }catch(e){
+  } catch(e) {
     console.error('syncToGist:',e);
     if(showToast) toast('保存エラー: '+e.message);
-  }finally{
+  } finally {
     syncInFlight=false;
   }
 }
@@ -1268,69 +1268,52 @@
   if(showToast===undefined) showToast=false;
 
   if(document.getElementById('settingsSheet').classList.contains('open')){
-    state.sync.githubToken = document.getElementById('gistTokenInput').value;
-    state.sync.gistId = document.getElementById('gistIdInput').value;
+    state.sync.githubToken = document.getElementById('gistTokenInput').value.trim();
+    state.sync.gistId = document.getElementById('gistIdInput').value.trim();
   }
 
-  // ★ 究極の浄化：英数字・アンダーバー・ハイフン以外（見えない文字など）をすべて強制削除
-  var token = (state.sync.githubToken || '').replace(/[^a-zA-Z0-9_-]/g, '');
-  var gistId = (state.sync.gistId || '').replace(/[^a-zA-Z0-9_-]/g, '');
+  var token = state.sync.githubToken.trim();
+  var gistId = state.sync.gistId.trim();
 
   if(!token||!gistId) return;
   if(syncInFlight) return;
   if(showToast) toast('Gistからデータ取得中...');
-  try{
-    var headers={
-      'Accept':'application/vnd.github+json',
-      'Authorization':'Bearer '+token,
-      'X-GitHub-Api-Version':'2022-11-28',
-    };
-    var res=await fetch('https://api.github.com/gists/'+gistId+'?t='+Date.now(),{headers:headers});
-    var rawText=await res.text();
-    if(!res.ok){
-      var em2='Gist APIエラー';
-      try{var j2=JSON.parse(rawText);em2=j2.message||em2;}catch(e){}
-      if(res.status===401) em2='トークンが無効または期限切れです';
-      if(res.status===403) em2='アクセスが拒否されました';
-      if(res.status===404) em2='Gist IDが見つかりません';
-      throw new Error(res.status+': '+em2);
-    }
-    var json2; try{json2=JSON.parse(rawText);}catch(e){throw new Error('レスポンスのパースに失敗しました');}
-    var files=json2.files||{};
-    var file=files['the-calendar-sync.json']||Object.values(files)[0];
-    if(!file) throw new Error('同期ファイルが見つかりません');
-    var content=file.content;
-    if(file.truncated&&file.raw_url){ var rr=await fetch(file.raw_url,{}); content=await rr.text(); }
-    if(!content) throw new Error('データが空です');
+  
+  try {
+    var res = await fetch('https://api.github.com/gists/' + gistId + '?t=' + Date.now(), {
+      headers: { 'Authorization': 'token ' + token }
+    });
     
-    var data; try{data=JSON.parse(content);}catch(e){throw new Error('データのパースに失敗しました');}
+    if(!res.ok) throw new Error('通信エラー: ' + res.status);
+    
+    var json2 = await res.json();
+    var file = json2.files['the-calendar-sync.json'] || Object.values(json2.files)[0];
+    if(!file) throw new Error('同期ファイルが見つかりません');
+    
+    var content = file.truncated && file.raw_url ? await (await fetch(file.raw_url)).text() : file.content;
+    var data = JSON.parse(content);
 
-    var remoteSavedAt = new Date(data.savedAt || 0).getTime();
-    var localSavedAt = new Date(state.sync.lastSyncAt || 0).getTime();
-
-    if (remoteSavedAt > localSavedAt) {
-      var localConanWall = state.profiles.conan.wallpaper || '';
-      var localKaoriWall = state.profiles.kaori.wallpaper || '';
-      if(data.profiles) {
-        state.profiles = data.profiles;
-        state.profiles.conan.wallpaper = localConanWall;
-        state.profiles.kaori.wallpaper = localKaoriWall;
-      }
-      if(data.entries) state.entries = data.entries;
-      if(data.settings) state.settings = data.settings;
-
-      state.sync.lastSyncAt = data.savedAt;
-      saveLocal();
-      if(typeof renderAll === 'function') renderAll();
-      updateSyncStatus();
-      if(showToast) toast('Gistから最新データを取得しました ↓');
-    } else {
-      if(showToast) toast('データは既に最新です');
+    // ★ マージ廃止・完全上書き (Last Write Wins) で先祖返りを防ぐ
+    var localConanWall = state.profiles.conan.wallpaper || '';
+    var localKaoriWall = state.profiles.kaori.wallpaper || '';
+    if(data.profiles) {
+      state.profiles = data.profiles;
+      state.profiles.conan.wallpaper = localConanWall;
+      state.profiles.kaori.wallpaper = localKaoriWall;
     }
-  }catch(e){
+    if(data.entries) state.entries = data.entries;
+    if(data.settings) state.settings = data.settings;
+
+    state.sync.lastSyncAt = data.savedAt || new Date().toISOString();
+    saveLocal();
+    if(typeof renderAll === 'function') renderAll();
+    updateSyncStatus();
+    
+    if(showToast) toast('Gistから最新データを取得しました ↓');
+  } catch(e) {
     console.error('pullFromGist:',e);
     if(showToast) toast('取得エラー: '+e.message);
-  }finally{
+  } finally {
     syncInFlight=false;
   }
 }
