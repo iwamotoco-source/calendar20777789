@@ -1216,20 +1216,15 @@
     async function syncToGist(showToast){
   if(showToast===undefined) showToast=true;
 
-  if(document.getElementById('settingsSheet').classList.contains('open')){
-    state.sync.githubToken = document.getElementById('gistTokenInput').value.trim();
-    state.sync.gistId = document.getElementById('gistIdInput').value.trim();
-  }
-
-  var token = state.sync.githubToken.trim();
-  var gistId = state.sync.gistId.trim();
+  // ★ 常に画面の入力欄の値を優先して読み取る
+  var token = document.getElementById('gistTokenInput') ? document.getElementById('gistTokenInput').value.trim() : (state.sync.githubToken || '').trim();
+  var gistId = document.getElementById('gistIdInput') ? document.getElementById('gistIdInput').value.trim() : (state.sync.gistId || '').trim();
 
   if(syncInFlight){if(showToast) toast('同期中です...');return;}
   if(!token){if(showToast) toast('GitHub Tokenを入力してください');return;}
   syncInFlight=true;
   
   try {
-    // ★ JSON.stringifyのインデントをなくし、通信サイズを極限まで圧縮
     var payload = JSON.stringify(getSyncPayload()); 
     var method = gistId ? 'PATCH' : 'POST';
     var url = gistId ? 'https://api.github.com/gists/' + gistId : 'https://api.github.com/gists';
@@ -1250,7 +1245,14 @@
     if(!res.ok) throw new Error('保存エラー: ' + res.status);
     
     var json = await res.json();
-    if(json.id) state.sync.gistId = json.id;
+    if(json.id) {
+      gistId = json.id;
+      state.sync.gistId = gistId;
+      if(document.getElementById('gistIdInput')) document.getElementById('gistIdInput').value = gistId;
+    }
+    
+    // 保存に成功したら、入力欄の値を state にも保存
+    state.sync.githubToken = token;
     state.sync.lastSyncAt = new Date().toISOString();
     saveLocal();
     updateSyncStatus();
@@ -1267,15 +1269,16 @@
     async function pullFromGist(showToast){
   if(showToast===undefined) showToast=false;
 
-  if(document.getElementById('settingsSheet').classList.contains('open')){
-    state.sync.githubToken = document.getElementById('gistTokenInput').value.trim();
-    state.sync.gistId = document.getElementById('gistIdInput').value.trim();
+  // ★ 常に画面の入力欄の値を優先して読み取る
+  var token = document.getElementById('gistTokenInput') ? document.getElementById('gistTokenInput').value.trim() : (state.sync.githubToken || '').trim();
+  var gistId = document.getElementById('gistIdInput') ? document.getElementById('gistIdInput').value.trim() : (state.sync.gistId || '').trim();
+
+  if(!token) {
+    if(showToast) toast('GitHub Tokenを設定してください');
+    return;
   }
+  if(!gistId) return;
 
-  var token = state.sync.githubToken.trim();
-  var gistId = state.sync.gistId.trim();
-
-  if(!token||!gistId) return;
   if(syncInFlight) return;
   if(showToast) toast('Gistからデータ取得中...');
   
@@ -1293,7 +1296,6 @@
     var content = file.truncated && file.raw_url ? await (await fetch(file.raw_url)).text() : file.content;
     var data = JSON.parse(content);
 
-    // ★ マージ廃止・完全上書き (Last Write Wins) で先祖返りを防ぐ
     var localConanWall = state.profiles.conan.wallpaper || '';
     var localKaoriWall = state.profiles.kaori.wallpaper || '';
     if(data.profiles) {
@@ -1304,6 +1306,9 @@
     if(data.entries) state.entries = data.entries;
     if(data.settings) state.settings = data.settings;
 
+    // 取得に成功したら、入力欄の値を state にも保存
+    state.sync.githubToken = token;
+    state.sync.gistId = gistId;
     state.sync.lastSyncAt = data.savedAt || new Date().toISOString();
     saveLocal();
     if(typeof renderAll === 'function') renderAll();
