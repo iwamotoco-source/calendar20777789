@@ -2,488 +2,864 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>THE CALENDAR</title>
   <style>
     :root{
-      --bg:#0a0a0f;--bg2:#12121a;--bg3:#191923;--panel:#111118;--card:#171722;--line:#2b2d3a;
-      --text:#f6f7fb;--muted:#a7adc2;--sub:#7b8199;--danger:#ff6b81;--success:#37d39a;
-      --shadow:0 18px 50px rgba(0,0,0,.35);--radius:18px;--accent:#4f8ef7;--accent2:#7b5ff8;
-      --accentSoft:rgba(79,142,247,.16);--accentGrad:linear-gradient(135deg,#4f8ef7,#7b5ff8);
-      --sidebarW:252px;
+      --bg:#0a0a0f;
+      --bg-2:#12121a;
+      --bg-3:#181824;
+      --panel:#111118;
+      --card:#171722;
+      --line:#2a2b3a;
+      --text:#f6f7fb;
+      --muted:#a5abc0;
+      --sub:#7b8199;
+      --danger:#ff6b81;
+      --success:#37d39a;
+      --warn:#f6c34d;
+      --shadow:0 18px 50px rgba(0,0,0,.35);
+      --radius:18px;
+      --radius-sm:12px;
+      --accent:#4f8ef7;
+      --accent-2:#7b5ff8;
+      --accent-soft:rgba(79,142,247,.16);
+      --accent-grad:linear-gradient(135deg,#4f8ef7,#7b5ff8);
+      --sidebar-w:248px;
       --font:'Segoe UI','Hiragino Sans','Yu Gothic UI',system-ui,sans-serif;
-      --safe-bottom: env(safe-area-inset-bottom, 0px);
-      --safe-top: env(safe-area-inset-top, 0px);
     }
-    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    *{box-sizing:border-box}
     html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--font)}
     body{min-height:100vh;overflow-x:hidden}
     button,input,select,textarea{font:inherit}
     img{display:block;max-width:100%}
-    body.user-conan{--accent:#4f8ef7;--accent2:#7b5ff8;--accentSoft:rgba(79,142,247,.16);--accentGrad:linear-gradient(135deg,#4f8ef7,#7b5ff8)}
-    body.user-kaori{--accent:#f472b6;--accent2:#fb7185;--accentSoft:rgba(244,114,182,.16);--accentGrad:linear-gradient(135deg,#f472b6,#fb7185)}
-    ::-webkit-scrollbar{width:6px;height:6px}
+    a{text-decoration:none;color:inherit}
+
+    body.user-conan{
+      --accent:#4f8ef7;
+      --accent-2:#7b5ff8;
+      --accent-soft:rgba(79,142,247,.16);
+      --accent-grad:linear-gradient(135deg,#4f8ef7,#7b5ff8);
+    }
+    body.user-kaori{
+      --accent:#f472b6;
+      --accent-2:#fb7185;
+      --accent-soft:rgba(244,114,182,.16);
+      --accent-grad:linear-gradient(135deg,#f472b6,#fb7185);
+    }
+
+    ::-webkit-scrollbar{width:8px;height:8px}
     ::-webkit-scrollbar-thumb{background:#36384c;border-radius:999px}
     ::-webkit-scrollbar-track{background:#12121a}
-    .wallpaper{position:fixed;inset:0;z-index:0;background-size:cover;background-position:center;opacity:.20;pointer-events:none}
-    .wallpaper::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at top right,rgba(255,255,255,.06),transparent 26%),linear-gradient(180deg,rgba(10,10,15,.48),rgba(10,10,15,.84))}
-    .app{position:relative;z-index:1;display:flex;min-height:100vh}
+
+    .wallpaper{
+      position:fixed; inset:0; z-index:0;
+      background-size:cover; background-position:center;
+      opacity:.22; pointer-events:none;
+      filter:saturate(1.05);
+    }
+    .wallpaper::after{
+      content:""; position:absolute; inset:0;
+      background:
+        radial-gradient(circle at top right, rgba(255,255,255,.06), transparent 26%),
+        linear-gradient(180deg, rgba(10,10,15,.48), rgba(10,10,15,.84));
+    }
+
+    .app{
+      position:relative; z-index:1; display:flex; min-height:100vh;
+    }
+
     .sidebar{
-      width:var(--sidebarW);min-width:var(--sidebarW);
-      background:rgba(13,13,19,.95);
-      backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+      width:var(--sidebar-w);
+      min-width:var(--sidebar-w);
+      background:rgba(13,13,19,.9);
+      backdrop-filter:blur(16px);
       border-right:1px solid rgba(255,255,255,.05);
-      position:fixed;inset:0 auto 0 0;
-      overflow-y:auto;overflow-x:hidden;
-      z-index:40;
+      position:fixed; inset:0 auto 0 0;
+      overflow:auto; z-index:40;
       transition:transform .25s ease;
-      padding-top:var(--safe-top);
-      padding-bottom:calc(100px + var(--safe-bottom));
     }
-    .sidebar.open{transform:translateX(0)!important}
-    .sidebarHeader{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.06)}
-    .brandMark{font-size:1.08rem;font-weight:900;letter-spacing:.14em;color:#e50914;text-transform:uppercase}
-    .brandSub{margin-top:6px;font-size:.75rem;letter-spacing:.2em;color:var(--muted);text-transform:uppercase}
-    .brandMini{margin-top:4px;font-size:.64rem;letter-spacing:.18em;color:var(--sub);text-transform:uppercase}
-    .userSwitcher{padding:12px;display:grid;gap:8px;border-bottom:1px solid rgba(255,255,255,.06)}
-    .userPill{
-      width:100%;border:1px solid #313346;background:rgba(255,255,255,.03);
-      color:var(--text);padding:10px;border-radius:14px;
-      display:flex;align-items:center;gap:10px;cursor:pointer;transition:.18s ease;
-      text-align:left;
+    .sidebar-header{
+      padding:18px 16px 14px;
+      border-bottom:1px solid rgba(255,255,255,.06);
     }
-    .userPill:hover{transform:translateY(-1px);border-color:var(--accent);background:var(--accentSoft)}
-    .userPill.active{border-color:var(--accent);background:var(--accentSoft)}
-    .userPillTitle{font-size:.86rem;font-weight:800}
+    .brand-mark{
+      font-size:1.1rem;
+      font-weight:900;
+      letter-spacing:.14em;
+      color:#e50914;
+      text-transform:uppercase;
+    }
+    .brand-sub{
+      margin-top:6px;
+      font-size:.75rem;
+      letter-spacing:.2em;
+      color:var(--muted);
+      text-transform:uppercase;
+    }
+    .brand-mini{
+      margin-top:4px;
+      font-size:.64rem;
+      letter-spacing:.18em;
+      color:var(--sub);
+      text-transform:uppercase;
+    }
+
+    .user-switcher{
+      padding:12px;
+      display:grid;
+      gap:8px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+    .user-pill{
+      width:100%;
+      border:1px solid #313346;
+      background:rgba(255,255,255,.03);
+      color:var(--text);
+      padding:10px;
+      border-radius:14px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      cursor:pointer;
+      transition:.18s ease;
+    }
+    .user-pill:hover{
+      transform:translateY(-1px);
+      border-color:var(--accent);
+      background:var(--accent-soft);
+    }
+    .user-pill.active{
+      border-color:var(--accent);
+      background:var(--accent-soft);
+      box-shadow:0 0 0 1px rgba(255,255,255,.03) inset;
+    }
     .avatar{
-      width:42px;height:42px;border-radius:14px;flex:0 0 42px;
-      display:flex;align-items:center;justify-content:center;
-      color:#fff;font-weight:900;font-size:1.1rem;overflow:hidden;position:relative;
+      width:42px;height:42px;border-radius:14px;
+      object-fit:cover;flex:0 0 auto;
+      background:var(--accent-grad);
+      display:grid;place-items:center;
+      color:#fff;font-weight:900;
     }
-    .avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
     .avatar.round{border-radius:50%}
-    .avatar.lg{width:72px;height:72px;border-radius:20px;font-size:1.4rem;flex:0 0 72px}
-    .avatar.xl{width:88px;height:88px;border-radius:24px;font-size:1.8rem;flex:0 0 88px}
-    .avatar.xs{width:26px;height:26px;border-radius:8px;font-size:.76rem;flex:0 0 26px}
-    .sidebarSec{padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)}
-    .sidebarSec:last-child{border-bottom:none}
-    .sidebarLabel{padding:0 16px 8px;font-size:.66rem;font-weight:800;letter-spacing:.16em;color:var(--sub);text-transform:uppercase}
-    .navItem{
-      display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;
-      font-size:.9rem;color:var(--muted);position:relative;transition:.15s ease;user-select:none;
+    .avatar.lg{width:72px;height:72px;border-radius:20px;font-size:1.4rem}
+    .avatar.xl{width:88px;height:88px;border-radius:24px;font-size:1.8rem}
+    .avatar.sm{width:30px;height:30px;border-radius:10px;font-size:.85rem}
+    .avatar.xs{width:22px;height:22px;border-radius:7px;font-size:.72rem}
+    .user-pill-title{font-size:.86rem;font-weight:800}
+    .user-pill-sub{font-size:.68rem;color:var(--sub);margin-top:2px}
+
+    .sidebar-sec{
+      padding:10px 0;
+      border-bottom:1px solid rgba(255,255,255,.06);
     }
-    .navItem:hover{background:rgba(255,255,255,.04);color:var(--text)}
-    .navItem.active{color:var(--text);background:linear-gradient(90deg,var(--accentSoft),transparent)}
-    .navItem.active::before{content:'';position:absolute;left:0;top:6px;bottom:6px;width:3px;border-radius:0 999px 999px 0;background:var(--accentGrad)}
-    .toggleRow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px}
-    .toggleLabel{font-size:.82rem;color:var(--muted);font-weight:700}
-    .switch{position:relative;width:44px;height:24px;display:inline-block;flex:0 0 44px}
+    .sidebar-label{
+      padding:0 16px 8px;
+      font-size:.66rem;
+      font-weight:800;
+      letter-spacing:.16em;
+      color:var(--sub);
+      text-transform:uppercase;
+    }
+    .nav-item{
+      display:flex;align-items:center;gap:10px;
+      padding:11px 16px;
+      cursor:pointer;
+      font-size:.9rem;
+      color:var(--muted);
+      position:relative;
+      transition:.15s ease;
+    }
+    .nav-item:hover{background:rgba(255,255,255,.04);color:var(--text)}
+    .nav-item.active{
+      color:var(--text);
+      background:linear-gradient(90deg,var(--accent-soft),transparent);
+    }
+    .nav-item.active::before{
+      content:""; position:absolute; left:0; top:6px; bottom:6px; width:3px;
+      border-radius:0 999px 999px 0; background:var(--accent-grad);
+    }
+
+    .toggle-row{
+      display:flex;align-items:center;justify-content:space-between;
+      gap:12px;padding:0 16px;
+    }
+    .toggle-label{font-size:.82rem;color:var(--muted);font-weight:700}
+    .switch{
+      position:relative;width:44px;height:24px;display:inline-block;
+    }
     .switch input{display:none}
-    .slider{position:absolute;inset:0;border-radius:999px;background:#34374a;cursor:pointer;transition:.2s}
-    .slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;border-radius:50%;background:#fff;transition:.2s}
+    .slider{
+      position:absolute;inset:0;border-radius:999px;background:#34374a;cursor:pointer;transition:.2s
+    }
+    .slider::before{
+      content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;border-radius:50%;
+      background:#fff;transition:.2s;
+    }
     .switch input:checked + .slider{background:var(--accent)}
     .switch input:checked + .slider::before{transform:translateX(20px)}
-    .miniCal{padding:0 12px 12px}
-    .miniHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-    .miniTitle{font-size:.82rem;font-weight:800}
-    .miniBtn{border:none;background:none;color:var(--muted);cursor:pointer;width:28px;height:28px;border-radius:8px;font-size:1rem}
-    .miniBtn:hover{background:rgba(255,255,255,.06);color:var(--text)}
-    .miniGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
-    .miniDow,.miniDay{text-align:center;font-size:.68rem;padding:4px 0}
-    .miniDow{color:var(--sub);font-weight:800}
-    .miniDay{color:var(--muted);border-radius:999px;cursor:pointer;position:relative;aspect-ratio:1;display:grid;place-items:center;line-height:1}
-    .miniDay:hover{background:rgba(255,255,255,.05)}
-    .miniDay.today{background:var(--accentGrad);color:#fff;font-weight:900}
-    .miniDay.selected{outline:2px solid var(--accent);color:var(--accent)}
-    .miniDay.has::after{content:'';position:absolute;bottom:2px;width:4px;height:4px;border-radius:50%;background:var(--accent)}
-    .miniDay.holiday{color:#ff6b6b!important;font-weight:900}
-    .countdownSec{padding:4px 12px 12px}
-    .countdownCard{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:10px 12px;margin-bottom:8px;cursor:pointer;transition:.15s ease}
-    .countdownCard:hover{border-color:var(--accent);background:var(--accentSoft)}
-    .countdownDays{font-size:1.4rem;font-weight:900;color:var(--accent);line-height:1}
-    .countdownLabel{font-size:.68rem;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .countdownDate{font-size:.62rem;color:var(--sub);margin-top:2px}
-    .main{margin-left:var(--sidebarW);flex:1;min-width:0;display:flex;flex-direction:column}
+
+    .mini-cal{padding:0 12px 12px}
+    .mini-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+    .mini-title{font-size:.82rem;font-weight:800}
+    .mini-btn{
+      border:none;background:none;color:var(--muted);cursor:pointer;
+      width:28px;height:28px;border-radius:8px;
+    }
+    .mini-btn:hover{background:rgba(255,255,255,.06);color:var(--text)}
+    .mini-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+    .mini-dow,.mini-day{
+      text-align:center;font-size:.68rem;padding:5px 0;
+    }
+    .mini-dow{color:var(--sub);font-weight:800}
+    .mini-day{
+      color:var(--muted); border-radius:999px; cursor:pointer; position:relative;
+      aspect-ratio:1; display:grid; place-items:center;
+    }
+    .mini-day:hover{background:rgba(255,255,255,.05)}
+    .mini-day.today{background:var(--accent-grad);color:#fff;font-weight:900}
+    .mini-day.selected{outline:2px solid var(--accent);color:var(--accent)}
+    .mini-day.has::after{
+      content:""; position:absolute; bottom:3px; width:4px;height:4px;border-radius:50%; background:var(--accent);
+    }
+
+    .main{
+      margin-left:var(--sidebar-w);
+      flex:1; min-width:0;
+      display:flex; flex-direction:column;
+    }
     .topbar{
-      position:sticky;top:0;z-index:25;
-      display:flex;align-items:center;gap:8px;flex-wrap:nowrap;
-      padding:10px 16px;padding-top:calc(10px + var(--safe-top));
-      background:linear-gradient(180deg,rgba(10,10,15,.96),rgba(10,10,15,.75));
-      backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+      position:sticky; top:0; z-index:25;
+      display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+      padding:12px 18px;
+      background:linear-gradient(180deg,rgba(10,10,15,.94),rgba(10,10,15,.72));
+      backdrop-filter:blur(14px);
       border-bottom:1px solid rgba(255,255,255,.05);
-      min-height:54px;
     }
-    .menuBtn{display:none;border:none;background:none;color:var(--text);font-size:1.3rem;cursor:pointer;width:36px;height:36px;border-radius:10px;flex:0 0 36px}
-    .menuBtn:hover{background:rgba(255,255,255,.05)}
-    .title{flex:1;min-width:0;font-size:1rem;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .monthNav{display:flex;align-items:center;gap:4px;flex:0 0 auto}
-    .iconBtn{
-      border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.04);
-      color:var(--muted);border-radius:10px;padding:7px 10px;cursor:pointer;
-      font-size:.78rem;font-weight:800;transition:.15s ease;white-space:nowrap;
+    .menu-btn{
+      display:none;
+      border:none;background:none;color:var(--text);font-size:1.2rem;cursor:pointer;
+      width:34px;height:34px;border-radius:10px;
     }
-    .iconBtn:hover{color:var(--text);background:rgba(255,255,255,.07)}
-    .monthText{min-width:100px;text-align:center;font-size:.9rem;font-weight:900}
-    .content{padding:16px 18px 40px}
-    .hero{position:relative;min-height:200px;overflow:hidden;border-radius:20px;margin-bottom:14px;border:1px solid rgba(255,255,255,.08);background:linear-gradient(90deg,rgba(0,0,0,.82),rgba(0,0,0,.28)),radial-gradient(circle at top right,rgba(255,255,255,.14),transparent 30%),var(--accentGrad);background-size:cover;background-position:center;box-shadow:var(--shadow)}
-    .hero::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent,rgba(0,0,0,.24))}
-    .heroInner{position:relative;z-index:1;min-height:200px;padding:20px;display:flex;flex-direction:column;justify-content:flex-end;gap:10px}
-    .heroKicker{font-size:.68rem;letter-spacing:.22em;font-weight:900;text-transform:uppercase;color:rgba(255,255,255,.72)}
-    .heroHead{display:flex;align-items:center;gap:14px;flex-wrap:nowrap}
-    .heroTitle{font-size:1.8rem;font-weight:950;line-height:1.1}
-    .heroContacts{display:flex;flex-direction:column;gap:4px;margin-top:2px}
-    .heroContact{display:flex;align-items:center;gap:8px;font-size:.82rem;color:rgba(255,255,255,.88);font-weight:700;word-break:break-all}
-    .heroBadges{display:flex;gap:8px;flex-wrap:wrap}
-    .heroBadge{display:inline-flex;align-items:center;gap:5px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.08);font-size:.72rem;font-weight:800}
-    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
-    .stat{background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015));border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:11px 12px;display:flex;align-items:center;gap:8px}
-    .statIcon{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex:0 0 34px;background:rgba(255,255,255,.06);font-size:1.1rem}
-    .statValue{font-size:1.18rem;font-weight:900;line-height:1}
-    .statLabel{font-size:.62rem;color:var(--sub);margin-top:3px;font-weight:800}
-    .monthStage{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px;align-items:start}
-    .calendarCol{min-width:0}
-    .calendarLegend{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0 10px}
-    .legendText{font-size:.7rem;color:var(--sub);font-weight:800;letter-spacing:.08em;text-transform:uppercase}
-    .legendPills{display:flex;gap:6px;flex-wrap:wrap}
-    .legendPill{font-size:.65rem;padding:5px 8px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:var(--muted);font-weight:800}
-    .gridHead,.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
-    .gridHead{margin-bottom:4px}
-    .dow{text-align:center;padding:4px 0;font-size:.68rem;font-weight:900;color:var(--sub)}
-    .cell{
-      min-height:100px;
+    .menu-btn:hover{background:rgba(255,255,255,.05)}
+    .title{
+      flex:1; min-width:140px;
+      font-size:1.02rem; font-weight:900;
+    }
+    .month-nav{
+      display:flex;align-items:center;gap:6px;
+    }
+    .icon-btn{
+      border:1px solid rgba(255,255,255,.07);
+      background:rgba(255,255,255,.04);
+      color:var(--muted);
+      border-radius:12px;
+      padding:8px 11px;
+      cursor:pointer;
+      font-size:.8rem;
+      font-weight:800;
+      transition:.15s ease;
+    }
+    .icon-btn:hover{color:var(--text);background:rgba(255,255,255,.07)}
+    .month-text{
+      min-width:120px;text-align:center;font-size:.95rem;font-weight:900;
+    }
+
+    .content{
+      padding:18px 20px 28px;
+    }
+
+    .hero{
+      position:relative;
+      min-height:225px;
+      overflow:hidden;
+      border-radius:24px;
+      margin-bottom:16px;
+      border:1px solid rgba(255,255,255,.08);
+      background:
+        linear-gradient(90deg, rgba(0,0,0,.82), rgba(0,0,0,.28)),
+        radial-gradient(circle at top right, rgba(255,255,255,.14), transparent 30%),
+        var(--accent-grad);
+      background-size:cover;
+      background-position:center;
+      box-shadow:var(--shadow);
+    }
+    .hero::after{
+      content:""; position:absolute; inset:0;
+      background:linear-gradient(180deg,transparent,rgba(0,0,0,.24));
+    }
+    .hero-inner{
+      position:relative; z-index:1;
+      min-height:225px;
+      padding:24px;
+      display:flex; flex-direction:column; justify-content:flex-end; gap:12px;
+    }
+    .hero-kicker{
+      font-size:.7rem; letter-spacing:.22em; font-weight:900;
+      text-transform:uppercase; color:rgba(255,255,255,.72);
+    }
+    .hero-head{display:flex;align-items:center;gap:14px}
+    .hero-title{font-size:2rem;font-weight:950;line-height:1.03}
+    .hero-sub{font-size:.9rem;color:rgba(255,255,255,.78)}
+    .hero-badges{display:flex;gap:8px;flex-wrap:wrap}
+    .hero-badge{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:7px 11px;border-radius:999px;
+      background:rgba(255,255,255,.1);
+      border:1px solid rgba(255,255,255,.08);
+      font-size:.74rem;font-weight:800;
+    }
+
+    .stats{
+      display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;
+    }
+    .stat{
       background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015));
-      border:1px solid rgba(255,255,255,.06);border-radius:14px;
-      padding:5px;display:flex;flex-direction:column;gap:3px;
-      position:relative;cursor:pointer;transition:.15s ease;overflow:hidden;
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:18px;padding:12px 14px;
+      display:flex;align-items:center;gap:10px;
     }
-    .cell:hover{background:rgba(255,255,255,.045);border-color:rgba(255,255,255,.14);transform:translateY(-1px)}
-    .cell.other{opacity:.32}
+    .stat-icon{
+      width:38px;height:38px;border-radius:12px;display:grid;place-items:center;flex:0 0 auto;
+      background:rgba(255,255,255,.06);
+    }
+    .stat-value{font-size:1.22rem;font-weight:900;line-height:1}
+    .stat-label{font-size:.66rem;color:var(--sub);margin-top:3px;font-weight:800}
+
+    .grid-head,.calendar{
+      display:grid;grid-template-columns:repeat(7,1fr);gap:4px;
+    }
+    .grid-head{margin-bottom:5px}
+    .dow{
+      text-align:center;padding:5px 0;font-size:.7rem;font-weight:900;color:var(--sub);
+    }
+    .cell{
+      min-height:112px;max-height:162px;
+      background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015));
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:16px;padding:5px;
+      display:flex;flex-direction:column;gap:4px;
+      position:relative;cursor:pointer;transition:.15s ease;
+      overflow:hidden;
+    }
+    .cell:hover{
+      background:rgba(255,255,255,.045);
+      border-color:rgba(255,255,255,.14);
+      transform:translateY(-1px);
+    }
+    .cell.other{opacity:.36}
     .cell.today{border-color:var(--accent)}
-    .cell.selected{background:var(--accentSoft);border-color:var(--accent)}
-    .cell.is-holiday{border-color:rgba(255,107,107,.4)}
-    .cellTop{display:flex;align-items:center;justify-content:space-between;padding:0 2px}
-    .dateNum{width:22px;height:22px;border-radius:999px;display:grid;place-items:center;font-size:.72rem;font-weight:900}
-    .cell.today .dateNum{background:var(--accentGrad);color:#fff}
-    .cell.is-holiday .dateNum{color:#ff6b6b!important;font-weight:900}
-    .goalChip{font-size:.52rem;font-weight:900;padding:2px 5px;border-radius:999px;background:var(--accentSoft);color:var(--accent)}
-    .holidayBar{font-size:.52rem;font-weight:900;color:#ff6b6b;background:rgba(255,107,107,.12);border-left:2px solid #ff6b6b;padding:2px 4px;border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .chips{display:flex;flex-direction:column;gap:3px;flex:1}
-    .chip{font-size:.58rem;font-weight:800;padding:3px 5px;border-radius:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .cell.selected{background:var(--accent-soft);border-color:var(--accent)}
+    .cell-top{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:0 2px;
+    }
+    .date-num{
+      width:22px;height:22px;border-radius:999px;display:grid;place-items:center;
+      font-size:.74rem;font-weight:900;
+    }
+    .cell.today .date-num{background:var(--accent-grad);color:#fff}
+    .goal-chip{
+      font-size:.55rem;font-weight:900;
+      padding:2px 6px;border-radius:999px;background:var(--accent-soft);color:var(--accent)
+    }
+    .chips{
+      display:flex;flex-direction:column;gap:3px;overflow:auto;
+    }
+    .chip{
+      font-size:.62rem;font-weight:800;padding:3px 6px;border-radius:8px;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
     .chip.work{background:rgba(79,142,247,.18);color:#9ec9ff;border-left:3px solid #4f8ef7}
     .chip.private{background:rgba(52,211,153,.18);color:#74eac0;border-left:3px solid #34d399}
     .chip.body{background:rgba(251,146,60,.18);color:#ffc08b;border-left:3px solid #fb923c}
     .chip.study{background:rgba(155,93,229,.18);color:#ddbfff;border-left:3px solid #9b5de5}
-    .chip.holiday{background:rgba(255,107,107,.18);color:#ff9999;border-left:3px solid #ff6b6b}
-    .chip.dayoff{background:rgba(34,197,94,.18);color:#86efac;border-left:3px solid #22c55e}
     .chip.shared{outline:1px dashed rgba(255,255,255,.14)}
-    .moreLine{font-size:.55rem;color:var(--sub);font-weight:800;padding:0 2px}
-    .cellDots{display:flex;align-items:center;gap:4px;margin-top:auto;min-height:10px}
-    .dot{width:6px;height:6px;border-radius:50%;display:inline-block}
-    .dot.work{background:#4f8ef7}.dot.private{background:#34d399}.dot.body{background:#fb923c}
-    .dot.study{background:#9b5de5}.dot.holiday{background:#ff6b6b}.dot.dayoff{background:#22c55e}
-    .sharedMark{margin-left:auto;font-size:.5rem;color:var(--muted);padding:1px 4px;border-radius:999px;background:rgba(255,255,255,.05);border:1px dashed rgba(255,255,255,.1)}
-    .feedWrap{max-width:720px;margin:0 auto}
-    .filters{background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015));border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:12px;margin-bottom:12px}
-    .filterRow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}
-    .filterRow:last-child{margin-bottom:0}
-    .filterLabel{min-width:48px;font-size:.66rem;font-weight:900;letter-spacing:.12em;color:var(--sub);text-transform:uppercase}
-    .filterChip{border:1px solid #3a3d53;background:#1b1d29;color:var(--muted);padding:4px 9px;border-radius:999px;cursor:pointer;font-size:.7rem;font-weight:800}
-    .filterChip.active{border-color:var(--accent);background:var(--accentSoft);color:var(--accent)}
-    .feedDayHead{display:flex;align-items:center;gap:8px;position:sticky;top:54px;z-index:5;padding:3px 0}
-    .feedLine{flex:1;height:1px;background:rgba(255,255,255,.08)}
-    .feedDate{font-size:.74rem;font-weight:900;color:var(--sub);padding:0 6px;background:var(--bg);border-radius:999px;white-space:nowrap}
-    .feedCard{background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015));border:1px solid rgba(255,255,255,.06);border-radius:18px;padding:13px;margin-bottom:10px;cursor:pointer;transition:.16s ease}
-    .feedCard:hover{transform:translateY(-1px);border-color:rgba(255,255,255,.14);box-shadow:0 0 0 3px var(--accentSoft)}
-    .feedCard.holiday-card{border-color:rgba(255,107,107,.3);background:linear-gradient(180deg,rgba(255,107,107,.06),rgba(255,107,107,.02))}
-    .feedTop{display:flex;gap:10px;align-items:flex-start}
-    .feedTitle{font-size:.82rem;font-weight:900}
-    .feedSub{font-size:.7rem;color:var(--sub);margin-top:3px}
-    .feedNote{font-size:.78rem;color:var(--muted);margin-top:7px;line-height:1.6}
-    .feedTags{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
-    .tag{font-size:.63rem;font-weight:800;padding:3px 7px;border-radius:999px;border:1px solid rgba(255,255,255,.08);color:var(--muted);background:#1c1d2a}
-    .dayFocus{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:14px;box-shadow:var(--shadow);scroll-margin-top:80px}
-    .dayFocusHead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
-    .dayFocusTitle{font-size:1rem;font-weight:900}
-    .dayFocusSub{font-size:.72rem;color:var(--sub);margin-top:3px}
-    .dayFocusList{display:flex;flex-direction:column;gap:8px}
-    .agendaCard{width:100%;text-align:left;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.03);border-radius:14px;padding:11px;cursor:pointer;color:var(--text);transition:.15s ease}
-    .agendaCard:hover{border-color:rgba(255,255,255,.14);background:rgba(255,255,255,.05)}
-    .agendaTop{display:flex;align-items:flex-start;gap:8px}
-    .agendaTime{min-width:68px;font-size:.7rem;font-weight:900;color:var(--accent);padding-top:2px}
-    .agendaTitle{font-size:.86rem;font-weight:900}
-    .agendaMeta{font-size:.68rem;color:var(--sub);margin-top:3px}
-    .agendaNote{font-size:.74rem;color:var(--muted);margin-top:6px;line-height:1.5}
-    .emptyState{padding:16px;border-radius:14px;background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.08);color:var(--sub);font-size:.76rem;line-height:1.7;text-align:center}
-    .sheet{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:12px}
+    .add-mini{
+      position:absolute; right:5px; bottom:5px;
+      width:20px;height:20px;border:none;border-radius:50%;
+      background:var(--accent-grad);color:#fff;display:none;cursor:pointer;
+      font-weight:900;
+    }
+    .cell:hover .add-mini{display:block}
+
+    .feed-wrap{max-width:760px;margin:0 auto}
+    .filters{
+      background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015));
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:18px;padding:14px;margin-bottom:14px;
+    }
+    .filter-row{
+      display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:9px;
+    }
+    .filter-row:last-child{margin-bottom:0}
+    .filter-label{
+      min-width:52px;font-size:.68rem;font-weight:900;letter-spacing:.12em;
+      color:var(--sub);text-transform:uppercase;
+    }
+    .filter-chip{
+      border:1px solid #3a3d53;background:#1b1d29;color:var(--muted);
+      padding:5px 10px;border-radius:999px;cursor:pointer;font-size:.72rem;font-weight:800;
+    }
+    .filter-chip.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+    .feed-day-head{
+      display:flex;align-items:center;gap:10px;
+      position:sticky; top:69px; z-index:5;
+      padding:4px 0;
+    }
+    .feed-line{flex:1;height:1px;background:rgba(255,255,255,.08)}
+    .feed-date{
+      font-size:.76rem;font-weight:900;color:var(--sub);
+      padding:0 6px;background:var(--bg);border-radius:999px;
+    }
+    .feed-card{
+      background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015));
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:20px;padding:14px;margin-bottom:12px;
+      box-shadow:0 12px 34px rgba(0,0,0,.18);
+      cursor:pointer;transition:.16s ease;
+    }
+    .feed-card:hover{
+      transform:translateY(-1px);
+      border-color:rgba(255,255,255,.14);
+      box-shadow:0 0 0 3px var(--accent-soft);
+    }
+    .feed-top{display:flex;gap:10px;align-items:flex-start}
+    .feed-title{font-size:.84rem;font-weight:900}
+    .feed-sub{font-size:.71rem;color:var(--sub);margin-top:3px}
+    .feed-note{font-size:.8rem;color:var(--muted);margin-top:8px;line-height:1.6}
+    .feed-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+    .tag{
+      font-size:.65rem;font-weight:800;padding:3px 8px;border-radius:999px;
+      border:1px solid rgba(255,255,255,.08);color:var(--muted);background:#1c1d2a;
+    }
+
+    .fab{
+      position:fixed; right:22px; bottom:22px; z-index:35;
+      width:58px;height:58px;border:none;border-radius:50%;
+      background:var(--accent-grad);color:#fff;font-size:1.5rem;font-weight:900;
+      cursor:pointer; box-shadow:0 14px 34px rgba(0,0,0,.34);
+    }
+
+    .sheet{
+      position:fixed; inset:0; z-index:80;
+      display:none; align-items:center; justify-content:center;
+      background:rgba(0,0,0,.62); backdrop-filter:blur(6px);
+      padding:14px;
+    }
     .sheet.open{display:flex}
-    .modal{width:100%;max-width:540px;max-height:94vh;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:20px;box-shadow:var(--shadow)}
-    .modalHead{display:flex;align-items:center;gap:10px;padding:15px 16px 0}
-    .modalTitle{font-size:.96rem;font-weight:900;flex:1}
-    .close{border:none;background:#202230;color:var(--muted);width:30px;height:30px;border-radius:10px;cursor:pointer;font-size:1rem}
+    .modal{
+      width:100%; max-width:560px; max-height:92vh; overflow:auto;
+      background:var(--panel);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:22px;
+      box-shadow:var(--shadow);
+    }
+    .modal-head{
+      display:flex; align-items:center; gap:10px;
+      padding:16px 18px 0;
+    }
+    .modal-title{font-size:1rem;font-weight:900;flex:1}
+    .close{
+      border:none;background:#202230;color:var(--muted);width:30px;height:30px;border-radius:10px;cursor:pointer;
+    }
     .close:hover{color:var(--text);background:#2a2d3e}
-    .modalBody{padding:12px 16px 16px}
-    .badgeDate{display:inline-block;margin-top:8px;padding:4px 10px;border-radius:999px;background:var(--accentGrad);color:#fff;font-size:.74rem;font-weight:900}
-    .row{margin-bottom:12px}
-    .label{display:block;font-size:.7rem;font-weight:900;color:var(--muted);margin-bottom:5px}
-    .input,.textarea,.select{width:100%;background:var(--bg3);color:var(--text);border:1px solid #313346;border-radius:12px}
-    .input,.select{height:50px;min-height:50px;padding:0 13px;-webkit-appearance:none;appearance:none;font-size:16px}
-    .input[type='date'],.input[type='time']{font-size:16px}
-    .input[type='file']{height:auto;min-height:50px;padding:12px;line-height:1.4;font-size:.82rem}
-    .input:focus,.textarea:focus,.select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px var(--accentSoft)}
-    .textarea{min-height:100px;padding:12px;line-height:1.6;resize:vertical;font-size:16px}
-    .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .themePreviewRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-    .themeSwatch{width:34px;height:34px;border-radius:10px;border:1px solid rgba(255,255,255,.1)}
-    .themeHelp{font-size:.67rem;color:var(--sub);line-height:1.6;margin-top:5px}
-    .checkLine{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:11px;margin:7px 0}
-    .checkLine input{accent-color:var(--accent);width:18px;height:18px;flex:0 0 18px}
-    .checkSub{font-size:.67rem;color:var(--sub);margin-top:2px}
-    .actions{display:flex;gap:8px;justify-content:flex-end;align-items:center;padding-top:8px}
-    .btn{border:none;border-radius:11px;padding:10px 14px;cursor:pointer;font-weight:900;font-size:.82rem;white-space:nowrap}
-    .btn.ghost{background:#202230;color:var(--muted);border:1px solid #313346}
-    .btn.primary{background:var(--accentGrad);color:#fff}
-    .btn.danger{background:rgba(255,107,129,.14);color:var(--danger);border:1px solid rgba(255,107,129,.24);margin-right:auto}
-    .tabs{display:flex;gap:5px;flex-wrap:wrap;margin:10px 0 8px}
-    .tab{border:1px solid #34374a;background:#1b1d29;color:var(--muted);border-radius:999px;padding:6px 10px;cursor:pointer;font-size:.73rem;font-weight:900}
-    .tab.active{border-color:var(--accent);background:var(--accentSoft);color:var(--accent)}
-    .dayoffTypes{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
-    .dayoffType{border:1px solid #34374a;background:#1b1d29;color:var(--muted);border-radius:999px;padding:5px 9px;cursor:pointer;font-size:.7rem;font-weight:800}
-    .dayoffType.active{border-color:#22c55e;background:rgba(34,197,94,.15);color:#86efac}
-    .profileGate{position:fixed;inset:0;z-index:100;display:none}
-    .profileGate.open{display:block}
-    .gateBg{position:absolute;inset:0;background:radial-gradient(circle at top,rgba(255,255,255,.08),transparent 30%),linear-gradient(180deg,#050507,#0b0b10 45%,#12121a)}
-    .gateInner{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;padding-bottom:calc(24px + var(--safe-bottom))}
-    .gateBrand{color:#e50914;font-size:.86rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;margin-bottom:10px}
-    .gateCopy{color:rgba(255,255,255,.54);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;font-weight:800;margin-bottom:8px}
-    .gateTitle{font-size:1.8rem;font-weight:950;margin:0 0 6px}
-    .gateSub{color:var(--muted);margin:0 0 22px;font-size:.9rem}
-    .gateGrid{display:grid;grid-template-columns:repeat(2,minmax(140px,180px));gap:16px}
-    .profileCard{position:relative;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:22px;padding:18px 14px 14px;cursor:pointer;transition:.2s ease;touch-action:manipulation;user-select:none}
-    .profileCard:hover{transform:translateY(-3px) scale(1.02);background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.18)}
-    .profileTap{position:absolute;inset:0;z-index:1;border-radius:22px}
-    .profileName{position:relative;z-index:2;margin-top:10px;font-size:.96rem;font-weight:900}
-    .profileEdit{position:relative;z-index:2;margin-top:8px;border:none;border-radius:999px;background:rgba(255,255,255,.08);color:#fff;padding:6px 12px;font-size:.7rem;font-weight:800;cursor:pointer}
-    .profileEdit:hover{background:rgba(255,255,255,.14)}
-    .settingsGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .settingCard{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:12px}
-    .settingTitle{font-size:.76rem;font-weight:900;margin-bottom:8px}
-    .settingHint{font-size:.67rem;color:var(--sub);line-height:1.6;margin-top:5px}
-    .statusLine{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 0;border-top:1px solid rgba(255,255,255,.06);margin-top:8px;font-size:.72rem;color:var(--muted)}
-    .syncButtons{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.82rem!important}
-    .bottomNav{
-      display:none;position:fixed;left:8px;right:8px;
-      bottom:calc(8px + var(--safe-bottom));
-      z-index:50;height:64px;border-radius:20px;
-      background:rgba(10,10,15,.92);
-      backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+    .modal-body{padding:14px 18px 18px}
+    .badge-date{
+      display:inline-block; margin-top:10px;
+      padding:4px 10px;border-radius:999px;
+      background:var(--accent-grad);color:#fff;font-size:.76rem;font-weight:900;
+    }
+    .row{margin-bottom:11px}
+    .label{display:block;font-size:.72rem;font-weight:900;color:var(--muted);margin-bottom:5px}
+    .input,.textarea,.select{
+      width:100%; background:var(--bg-3); color:var(--text);
+      border:1px solid #313346; border-radius:12px;
+      padding:9px 10px;
+    }
+    .input:focus,.textarea:focus,.select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+    .textarea{min-height:80px;resize:vertical}
+    .row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .check-line{
+      display:flex;align-items:center;gap:8px;
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.07);
+      border-radius:14px;padding:12px;
+      margin:12px 0;
+    }
+    .check-line input{accent-color:var(--accent)}
+    .check-sub{font-size:.68rem;color:var(--sub);margin-top:3px}
+    .actions{
+      display:flex;gap:8px;justify-content:flex-end;align-items:center;
+      padding-top:8px;
+    }
+    .btn{
+      border:none;border-radius:12px;padding:10px 14px;cursor:pointer;font-weight:900;
+    }
+    .btn.ghost{
+      background:#202230;color:var(--muted);border:1px solid #313346;
+    }
+    .btn.primary{
+      background:var(--accent-grad);color:#fff;
+    }
+    .btn.danger{
+      background:rgba(255,107,129,.14);color:var(--danger);border:1px solid rgba(255,107,129,.24);
+      margin-right:auto;
+    }
+
+    .tabs{
+      display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 14px;
+    }
+    .tab{
+      border:1px solid #34374a;background:#1b1d29;color:var(--muted);
+      border-radius:999px;padding:7px 11px;cursor:pointer;font-size:.76rem;font-weight:900;
+    }
+    .tab.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+
+    .profile-gate{
+      position:fixed; inset:0; z-index:100;
+      display:none;
+    }
+    .profile-gate.open{display:block}
+    .gate-bg{
+      position:absolute; inset:0;
+      background:
+        radial-gradient(circle at top, rgba(255,255,255,.08), transparent 30%),
+        linear-gradient(180deg,#050507,#0b0b10 45%, #12121a);
+    }
+    .gate-inner{
+      position:relative; z-index:1;
+      min-height:100vh; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; text-align:center;
+      padding:24px;
+    }
+    .gate-brand{
+      color:#e50914; font-size:.86rem; font-weight:900; letter-spacing:.28em;
+      text-transform:uppercase; margin-bottom:10px;
+    }
+    .gate-copy{
+      color:rgba(255,255,255,.54); font-size:.72rem; letter-spacing:.22em;
+      text-transform:uppercase; font-weight:800; margin-bottom:10px;
+    }
+    .gate-title{font-size:2rem;font-weight:950;margin:0 0 8px}
+    .gate-sub{color:var(--muted);margin:0 0 26px}
+    .gate-grid{
+      display:grid;grid-template-columns:repeat(2,minmax(150px,190px));gap:18px;
+    }
+    .profile-card{
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:24px;
+      padding:20px 16px 16px;
+      cursor:pointer;
+      transition:.2s ease;
+      box-shadow:0 20px 46px rgba(0,0,0,.24);
+    }
+    .profile-card:hover{
+      transform:translateY(-4px) scale(1.02);
+      background:rgba(255,255,255,.06);
+      border-color:rgba(255,255,255,.18);
+    }
+    .profile-name{margin-top:12px;font-size:1rem;font-weight:900}
+    .profile-edit{
+      margin-top:10px;border:none;border-radius:999px;
+      background:rgba(255,255,255,.08);color:#fff;
+      padding:7px 12px;font-size:.72rem;font-weight:800;cursor:pointer;
+    }
+    .profile-edit:hover{background:rgba(255,255,255,.14)}
+
+    .splash{
+      position:fixed; inset:0; z-index:120;
+      background:
+        radial-gradient(circle at center, rgba(255,255,255,.04), transparent 28%),
+        linear-gradient(180deg,#000 0%, #090909 45%, #111 100%);
+      display:grid; place-items:center;
+      overflow:hidden;
+      transition:opacity .6s ease, visibility .6s ease;
+    }
+    .splash.hide{opacity:0;visibility:hidden;pointer-events:none}
+    .s-glow{
+      position:absolute;width:460px;height:460px;border-radius:50%;
+      background:radial-gradient(circle, rgba(229,9,20,.22) 0%, rgba(229,9,20,.1) 38%, transparent 70%);
+      filter:blur(22px); animation:glowPulse 1.85s ease-in-out forwards;
+    }
+    .s-light{
+      position:absolute;top:0;bottom:0;width:120px;
+      background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.03) 20%,rgba(255,255,255,.16) 45%,rgba(229,9,20,.58) 50%,rgba(255,255,255,.14) 55%,rgba(255,255,255,.02) 80%,transparent 100%);
+      transform:translateX(-180vw) skewX(-16deg);
+      filter:blur(2px); animation:lightSweep 1.35s cubic-bezier(.22,.8,.2,1) .15s forwards;
+    }
+    .s-center{
+      position:relative;z-index:1;text-align:center;
+      animation:centerPop 1.8s ease forwards;
+    }
+    .s-logo{
+      font-size:clamp(48px,8vw,96px);line-height:1;
+      font-weight:950;letter-spacing:.05em;color:#e50914;
+      text-shadow:0 0 10px rgba(229,9,20,.3),0 0 26px rgba(229,9,20,.18),0 10px 30px rgba(0,0,0,.45);
+      opacity:0; transform:scale(.82); animation:logoReveal 1s cubic-bezier(.2,.8,.2,1) .2s forwards;
+      text-transform:uppercase;
+    }
+    .s-name,.s-sub{
+      opacity:0; transform:translateY(10px); text-transform:uppercase;
+    }
+    .s-name{
+      margin-top:10px;color:rgba(255,255,255,.84);
+      font-size:.86rem;letter-spacing:.3em;font-weight:900;padding-left:.3em;
+      animation:nameReveal .7s ease .78s forwards;
+    }
+    .s-sub{
+      margin-top:8px;color:rgba(255,255,255,.5);
+      font-size:.72rem;letter-spacing:.22em;font-weight:800;padding-left:.22em;
+      animation:nameReveal .7s ease .96s forwards;
+    }
+    @keyframes logoReveal{
+      0%{opacity:0;transform:scale(.68);filter:blur(14px)}
+      55%{opacity:1;transform:scale(1.04);filter:blur(0)}
+      100%{opacity:1;transform:scale(1);filter:blur(0)}
+    }
+    @keyframes nameReveal{to{opacity:1;transform:translateY(0)}}
+    @keyframes lightSweep{
+      0%{transform:translateX(-180vw) skewX(-16deg);opacity:0}
+      15%{opacity:1}
+      100%{transform:translateX(180vw) skewX(-16deg);opacity:.85}
+    }
+    @keyframes glowPulse{
+      0%{transform:scale(.7);opacity:0}
+      30%{opacity:1}
+      100%{transform:scale(1.25);opacity:.55}
+    }
+    @keyframes centerPop{
+      0%{transform:scale(.98)}
+      70%{transform:scale(1)}
+      100%{transform:scale(1.03)}
+    }
+
+    .toast-wrap{
+      position:fixed; right:18px; bottom:88px; z-index:90;
+      display:flex; flex-direction:column; gap:8px;
+    }
+    .toast{
+      background:#161723;border:1px solid rgba(255,255,255,.08);
+      color:var(--text);padding:10px 12px;border-radius:14px;
+      box-shadow:var(--shadow);font-size:.82rem;max-width:300px;
+    }
+
+    .bottom-nav{
+      display:none;
+      position:fixed; left:10px; right:10px; bottom:10px; z-index:50;
+      height:72px; border-radius:22px;
+      background:rgba(10,10,15,.9); backdrop-filter:blur(18px);
       border:1px solid rgba(255,255,255,.08);
       box-shadow:0 18px 45px rgba(0,0,0,.38);
-      padding:6px 8px;align-items:center;justify-content:space-between;
+      padding:8px 10px;
+      align-items:center; justify-content:space-between;
     }
-    .bottomItem{flex:1;height:100%;background:none;border:none;color:var(--sub);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;touch-action:manipulation;padding:0}
-    .bottomItem.active{color:#fff}
-    .bottomIcon{font-size:1rem;line-height:1;pointer-events:none}
-    .bottomLabel{font-size:.58rem;font-weight:900;pointer-events:none;white-space:nowrap}
-    .bottomAdd{flex:0 0 52px}
-    .bottomPlus{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:var(--accentGrad);color:#fff;font-size:1.4rem;font-weight:900;pointer-events:none}
-    .toastWrap{position:fixed;right:14px;bottom:calc(80px + var(--safe-bottom));z-index:90;display:flex;flex-direction:column;gap:7px;pointer-events:none}
-    .toast{background:#161723;border:1px solid rgba(255,255,255,.08);color:var(--text);padding:10px 12px;border-radius:12px;box-shadow:var(--shadow);font-size:.8rem;max-width:280px;pointer-events:auto}
-    .splash{position:fixed;inset:0;z-index:120;background:radial-gradient(circle at center,rgba(255,255,255,.04),transparent 28%),linear-gradient(180deg,#000 0%,#090909 45%,#111 100%);display:grid;place-items:center;overflow:hidden;transition:opacity .6s ease,visibility .6s ease;animation:splashAutoHide 0.01s linear 2.2s forwards}
-    .splash.hide{opacity:0;visibility:hidden;pointer-events:none}
-    .sGlow{position:absolute;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(229,9,20,.22) 0%,rgba(229,9,20,.1) 38%,transparent 70%);filter:blur(22px);animation:glowPulse 1.85s ease-in-out forwards}
-    .sLight{position:absolute;top:0;bottom:0;width:100px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.03) 20%,rgba(255,255,255,.16) 45%,rgba(229,9,20,.58) 50%,rgba(255,255,255,.14) 55%,rgba(255,255,255,.02) 80%,transparent);transform:translateX(-180vw) skewX(-16deg);filter:blur(2px);animation:lightSweep 1.35s cubic-bezier(.22,.8,.2,1) .15s forwards}
-    .sCenter{position:relative;z-index:1;text-align:center;animation:centerPop 1.8s ease forwards}
-    .sLogo{font-size:clamp(42px,8vw,86px);line-height:1;font-weight:950;letter-spacing:.05em;color:#e50914;text-shadow:0 0 10px rgba(229,9,20,.3),0 0 26px rgba(229,9,20,.18),0 10px 30px rgba(0,0,0,.45);opacity:0;transform:scale(.82);animation:logoReveal 1s cubic-bezier(.2,.8,.2,1) .2s forwards;text-transform:uppercase}
-    .sName,.sSub{opacity:0;transform:translateY(10px);text-transform:uppercase}
-    .sName{margin-top:10px;color:rgba(255,255,255,.84);font-size:.86rem;letter-spacing:.3em;font-weight:900;animation:nameReveal .7s ease .78s forwards}
-    .sSub{margin-top:8px;color:rgba(255,255,255,.5);font-size:.72rem;letter-spacing:.22em;font-weight:800;animation:nameReveal .7s ease .96s forwards}
-    @keyframes logoReveal{0%{opacity:0;transform:scale(.68);filter:blur(14px)}55%{opacity:1;transform:scale(1.04);filter:blur(0)}100%{opacity:1;transform:scale(1);filter:blur(0)}}
-    @keyframes nameReveal{to{opacity:1;transform:translateY(0)}}
-    @keyframes lightSweep{0%{transform:translateX(-180vw) skewX(-16deg);opacity:0}15%{opacity:1}100%{transform:translateX(180vw) skewX(-16deg);opacity:.85}}
-    @keyframes glowPulse{0%{transform:scale(.7);opacity:0}30%{opacity:1}100%{transform:scale(1.25);opacity:.55}}
-    @keyframes centerPop{0%{transform:scale(.98)}70%{transform:scale(1)}100%{transform:scale(1.03)}}
-    @keyframes splashAutoHide{to{opacity:0;visibility:hidden;pointer-events:none}}
-    .hidden{display:none!important}
-    @media print{
-      body{background:#fff!important;color:#000!important}
-      .sidebar,.bottomNav,.topbar,.toastWrap,.splash,.profileGate,.sheet{display:none!important}
-      .main{margin-left:0!important}
-      .wallpaper{display:none!important}
-      .cell{border:1px solid #ccc!important;background:#fff!important;break-inside:avoid;min-height:80px!important}
-      .hero,.stats{display:none!important}
-      .content{padding:4px!important}
-      .dateNum{color:#000!important}
-      .cell.is-holiday .dateNum{color:#cc0000!important}
-      .chip{color:#333!important;background:#eee!important}
-      .holidayBar{color:#cc0000!important}
-      .monthStage{grid-template-columns:1fr!important}
-      .dayFocus{display:none!important}
+    .bottom-item{
+      flex:1;height:100%;background:none;border:none;color:var(--sub);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;
     }
-    @media(max-width:1200px){.stats{grid-template-columns:repeat(2,1fr)}}
-    @media(max-width:1000px){.monthStage{grid-template-columns:1fr}}
-    @media(max-width:900px){
+    .bottom-item.active{color:#fff}
+    .bottom-icon{font-size:1.1rem;line-height:1;display:grid;place-items:center}
+    .bottom-label{font-size:.65rem;font-weight:900}
+    .bottom-add{flex:0 0 58px}
+    .bottom-plus{
+      width:44px;height:44px;border-radius:50%;display:grid;place-items:center;
+      background:var(--accent-grad);color:#fff;font-size:1.5rem;font-weight:900;
+    }
+
+    .hidden{display:none !important}
+
+    @media (max-width:980px){
+      .stats{grid-template-columns:repeat(2,1fr)}
+    }
+    @media (max-width:900px){
       .sidebar{transform:translateX(-100%)}
-      .menuBtn{display:flex;align-items:center;justify-content:center}
+      .sidebar.open{transform:translateX(0)}
+      .menu-btn{display:block}
       .main{margin-left:0}
-      .content{padding:10px 10px calc(80px + var(--safe-bottom))}
-      .bottomNav{display:flex}
-      .hero{min-height:170px}
-      .heroInner{min-height:170px;padding:16px}
-      .heroTitle{font-size:1.5rem}
-      .feedDayHead{top:54px}
-      .monthStage{grid-template-columns:1fr}
-      .dayFocus{margin-top:10px}
-      .cell{min-height:72px}
+      .content{padding:12px 10px 96px}
+      .bottom-nav{display:flex}
+      .fab{bottom:94px;right:18px}
+      .hero{min-height:190px}
+      .hero-inner{min-height:190px;padding:18px}
+      .hero-title{font-size:1.55rem}
+      .feed-day-head{top:65px}
     }
-    @media(max-width:640px){
-      .gridHead,.calendar{gap:2px}
-      .cell{min-height:60px;padding:4px}
-      .chip{font-size:.52rem;padding:2px 4px}
+    @media (max-width:640px){
+      .grid-head,.calendar{gap:3px}
+      .cell{min-height:62px;max-height:106px;padding:3px}
+      .chip{font-size:.56rem;padding:2px 5px}
       .stats{grid-template-columns:1fr 1fr}
-      .row2,.settingsGrid{grid-template-columns:1fr}
-      .monthText{min-width:80px;font-size:.82rem}
-      .gateGrid{grid-template-columns:repeat(2,minmax(120px,1fr));width:min(100%,360px)}
-      .profileName{font-size:.9rem}
-      .gateTitle{font-size:1.5rem}
-      .dayFocusHead{flex-direction:column;align-items:stretch}
-      .agendaTop{flex-direction:column}
-      .agendaTime{min-width:0}
-      .heroTitle{font-size:1.3rem}
-      .actions{flex-wrap:wrap}
-      .actions .btn.danger{flex:0 0 auto}
-      .topbar{padding:8px 10px;padding-top:calc(8px + var(--safe-top))}
-      .iconBtn{padding:6px 8px;font-size:.74rem}
-      .monthText{min-width:70px}
-    }
-    @media(max-width:380px){
-      .cell{min-height:48px;padding:3px}
-      .dateNum{width:18px;height:18px;font-size:.66rem}
-      .goalChip,.holidayBar,.chip{display:none}
-      .cellDots{display:flex}
-      .heroTitle{font-size:1.1rem}
-      .heroBadge{font-size:.66rem;padding:4px 7px}
+      .row-2{grid-template-columns:1fr}
+      .month-text{min-width:auto}
+      .gate-grid{grid-template-columns:repeat(2,minmax(120px,1fr));width:min(100%,380px)}
+      .profile-name{font-size:.94rem}
+      .gate-title{font-size:1.62rem}
+      .hero-head{align-items:flex-end}
+      .hero-avatar{width:58px;height:58px;border-radius:18px}
     }
   </style>
-  <link rel="manifest" href="/calendar2026/manifest.json">
-  <meta name="theme-color" content="#b51a00">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="The Calendar">
-  <meta name="mobile-web-app-capable" content="yes">
-  <link rel="apple-touch-icon" href="/calendar2026/icon-192.png">
 </head>
 <body class="user-conan">
   <div class="wallpaper" id="wallpaper"></div>
+
   <div class="splash" id="splash">
-    <div class="sGlow"></div><div class="sLight"></div>
-    <div class="sCenter"><div class="sLogo">THE CALENDAR</div><div class="sName">THE CALENDAR</div><div class="sSub">CONAN&amp;KAORI</div></div>
-  </div>
-  <div class="profileGate open" id="profileGate">
-    <div class="gateBg"></div>
-    <div class="gateInner">
-      <div class="gateBrand">THE CALENDAR</div>
-      <div class="gateCopy">conan&amp;kaori</div>
-      <h1 class="gateTitle"></h1>
-      <p class="gateSub"></p>
-      <div class="gateGrid" id="profileGateGrid"></div>
+    <div class="s-glow"></div>
+    <div class="s-light"></div>
+    <div class="s-center">
+      <div class="s-logo">THE CALENDAR</div>
+      <div class="s-name">THE CALENDAR</div>
+      <div class="s-sub">conan&amp;kaori</div>
     </div>
   </div>
+
+  <div class="profile-gate" id="profileGate">
+    <div class="gate-bg"></div>
+    <div class="gate-inner">
+      <div class="gate-brand">THE CALENDAR</div>
+      <div class="gate-copy">conan&amp;kaori</div>
+      <h1 class="gate-title">プロフィールを選択</h1>
+      <p class="gate-sub">今日はどちらのカレンダーで入る？</p>
+      <div class="gate-grid" id="profileGateGrid"></div>
+    </div>
+  </div>
+
   <div class="app">
     <aside class="sidebar" id="sidebar">
-      <div class="sidebarHeader">
-        <div class="brandMark">THE CALENDAR</div>
-        <div class="brandSub">conan&amp;kaori</div>
-        <div class="brandMini">private shared schedule</div>
+      <div class="sidebar-header">
+        <div class="brand-mark">THE CALENDAR</div>
+        <div class="brand-sub">conan&amp;kaori</div>
+        <div class="brand-mini">private shared schedule</div>
       </div>
-      <div class="userSwitcher" id="userSwitcher"></div>
-      <div class="sidebarSec">
-        <div class="sidebarLabel">表示</div>
-        <div class="navItem active" data-view-btn="month" onclick="setView('month')">📅 月表示</div>
-        <div class="navItem" data-view-btn="list" onclick="setView('list')">📋 リスト表示</div>
+
+      <div class="user-switcher" id="userSwitcher"></div>
+
+      <div class="sidebar-sec">
+        <div class="sidebar-label">View</div>
+        <div class="nav-item active" data-view-btn="month" onclick="setView('month')">🏠 ホーム</div>
+        <div class="nav-item" data-view-btn="list" onclick="setView('list')">📋 一覧</div>
       </div>
-      <div class="sidebarSec">
-        <div class="sidebarLabel">共有</div>
-        <div class="toggleRow">
-          <div class="toggleLabel">相手の予定を表示</div>
-          <label class="switch"><input type="checkbox" id="sharedToggle" onchange="toggleShared(this.checked)"><span class="slider"></span></label>
+
+      <div class="sidebar-sec">
+        <div class="sidebar-label">Shared</div>
+        <div class="toggle-row">
+          <div class="toggle-label">相手の予定を表示</div>
+          <label class="switch">
+            <input type="checkbox" id="sharedToggle" onchange="toggleShared(this.checked)">
+            <span class="slider"></span>
+          </label>
         </div>
+        <div style="padding:8px 16px 0;font-size:.68rem;color:var(--sub)">ONにすると両者の予定をまとめて表示</div>
       </div>
-      <div class="sidebarSec">
-        <div class="sidebarLabel">ミニカレンダー</div>
-        <div class="miniCal">
-          <div class="miniHead">
-            <button class="miniBtn" onclick="miniMove(-1)">&#8249;</button>
-            <div class="miniTitle" id="miniTitle"></div>
-            <button class="miniBtn" onclick="miniMove(1)">&#8250;</button>
+
+      <div class="sidebar-sec">
+        <div class="sidebar-label">Mini Calendar</div>
+        <div class="mini-cal">
+          <div class="mini-head">
+            <button class="mini-btn" onclick="miniMove(-1)">‹</button>
+            <div class="mini-title" id="miniTitle"></div>
+            <button class="mini-btn" onclick="miniMove(1)">›</button>
           </div>
-          <div class="miniGrid" id="miniGrid"></div>
+          <div class="mini-grid" id="miniGrid"></div>
         </div>
       </div>
-      <div class="sidebarSec" id="countdownSecWrap" style="display:none">
-        <div class="sidebarLabel">⏱ カウントダウン</div>
-        <div class="countdownSec" id="countdownList"></div>
-      </div>
-      <div class="sidebarSec">
-        <div class="sidebarLabel">メニュー</div>
-        <div class="navItem" onclick="openProfileGate()">👤 ユーザー切替</div>
-        <div class="navItem" onclick="openProfileEditor(state.currentUser)">✏️ プロフィール編集</div>
-        <div class="navItem" onclick="openSettings()">⚙️ 設定 / Gist同期</div>
-        <div class="navItem" onclick="printCalendar()">🖨️ 印刷</div>
+
+      <div class="sidebar-sec">
+        <div class="sidebar-label">Profile</div>
+        <div class="nav-item" onclick="openProfileGate()">👤 プロフィール選択</div>
+        <div class="nav-item" onclick="openProfileEditor(state.currentUser)">🖼 プロフィール編集</div>
       </div>
     </aside>
+
     <main class="main">
       <div class="topbar">
-        <button class="menuBtn" onclick="toggleSidebar()">&#9776;</button>
-        <div class="title" id="topTitle"></div>
-        <div class="monthNav">
-          <button class="iconBtn" onclick="moveMonth(-1)">&#8249;</button>
-          <div class="monthText" id="monthText"></div>
-          <button class="iconBtn" onclick="moveMonth(1)">&#8250;</button>
-          <button class="iconBtn" onclick="goToday()">今日</button>
+        <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+        <div class="title" id="topTitle">Conan のカレンダー</div>
+
+        <div class="month-nav">
+          <button class="icon-btn" onclick="moveMonth(-1)">‹</button>
+          <div class="month-text" id="monthText"></div>
+          <button class="icon-btn" onclick="moveMonth(1)">›</button>
+          <button class="icon-btn" onclick="goToday()">今日</button>
         </div>
-        <button class="iconBtn" onclick="openProfileGate()" id="topProfileBtn">👤</button>
-        <button class="iconBtn" onclick="printCalendar()">🖨️</button>
+
+        <button class="icon-btn" onclick="openProfileGate()">プロフィール</button>
       </div>
+
       <div class="content" id="content"></div>
     </main>
   </div>
-  <div class="bottomNav">
-    <button type="button" class="bottomItem active" data-bottom-view="month" onclick="setView('month')" ontouchend="event.preventDefault();setView('month')">
-      <div class="bottomIcon">📅</div><div class="bottomLabel">カレンダー</div>
+
+  <button class="fab" onclick="openEntryModal()">＋</button>
+
+  <div class="bottom-nav">
+    <button class="bottom-item active" data-bottom-view="month" onclick="setView('month')">
+      <div class="bottom-icon">🏠</div>
+      <div class="bottom-label">ホーム</div>
     </button>
-    <button type="button" class="bottomItem" data-bottom-view="list" onclick="setView('list')" ontouchend="event.preventDefault();setView('list')">
-      <div class="bottomIcon">📋</div><div class="bottomLabel">リスト</div>
+    <button class="bottom-item" data-bottom-view="list" onclick="setView('list')">
+      <div class="bottom-icon">📋</div>
+      <div class="bottom-label">一覧</div>
     </button>
-    <button type="button" class="bottomItem bottomAdd" onclick="openEntryModal()" ontouchend="event.preventDefault();openEntryModal()">
-      <div class="bottomPlus">+</div>
+    <button class="bottom-item bottom-add" onclick="openEntryModal()">
+      <div class="bottom-plus">＋</div>
     </button>
-    <button type="button" class="bottomItem" onclick="openProfileEditor(state.currentUser)" ontouchend="event.preventDefault();openProfileEditor(state.currentUser)">
-      <div class="bottomIcon">✏️</div><div class="bottomLabel">編集</div>
+    <button class="bottom-item" onclick="openProfileEditor(state.currentUser)">
+      <div class="bottom-icon">🖼</div>
+      <div class="bottom-label">編集</div>
     </button>
-    <button type="button" class="bottomItem" onclick="openProfileGate()" ontouchend="event.preventDefault();openProfileGate()">
-      <div class="bottomIcon" id="bottomProfileIcon"></div><div class="bottomLabel">切替</div>
+    <button class="bottom-item" onclick="openProfileGate()">
+      <div class="bottom-icon" id="bottomProfileIcon">👤</div>
+      <div class="bottom-label">プロフィール</div>
     </button>
   </div>
 
-  <!-- Entry Sheet -->
   <div class="sheet" id="entrySheet" onclick="onSheetBg(event,'entrySheet')">
     <div class="modal">
-      <div class="modalHead"><div class="modalTitle" id="entryModalTitle">予定</div><button class="close" onclick="closeEntryModal()">&#x2715;</button></div>
-      <div class="modalBody">
-        <div class="badgeDate" id="entryDateBadge"></div>
-        <div class="row"><label class="label">日付</label><input class="input" type="date" id="entryDate"></div>
-        <div class="tabs" id="catTabs"></div>
-        <div id="dayoffTypeRow" class="row hidden"><label class="label">休暇の種類</label><div class="dayoffTypes" id="dayoffTypes"></div></div>
-        <div id="holidayNameRow" class="row hidden"><label class="label">祝日名</label><input class="input" id="holidayNameInput" placeholder="例: 振替休日、記念日..."></div>
-        <div class="row"><label class="label">タイトル</label><input class="input" id="entryTitle" placeholder="例: 仕事 / MTG / デート"></div>
-        <div class="row2">
-          <div class="row"><label class="label">開始</label><input class="input" type="time" id="entryFrom"></div>
-          <div class="row"><label class="label">終了</label><input class="input" type="time" id="entryTo"></div>
+      <div class="modal-head">
+        <div class="modal-title" id="entryModalTitle">予定を追加</div>
+        <button class="close" onclick="closeEntryModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="badge-date" id="entryDateBadge"></div>
+
+        <div class="row">
+          <label class="label">日付</label>
+          <input class="input" type="date" id="entryDate" />
         </div>
-        <div class="row"><label class="label">メモ</label><textarea class="textarea" id="entryNote" placeholder="詳細メモ..."></textarea></div>
-        <div class="checkLine"><input type="checkbox" id="entryShared"><div><div style="font-size:.84rem;font-weight:900">相手と共有する</div><div class="checkSub">相手のカレンダーにも表示されます</div></div></div>
-        <div class="checkLine"><input type="checkbox" id="entryCountdown"><div><div style="font-size:.84rem;font-weight:900">⏱ カウントダウン表示</div><div class="checkSub">サイドバーに残り日数を表示します</div></div></div>
+
+        <div class="tabs" id="catTabs"></div>
+
+        <div class="row">
+          <label class="label">タイトル</label>
+          <input class="input" id="entryTitle" placeholder="例：夜ごはん / MTG / ジム" />
+        </div>
+
+        <div class="row-2">
+          <div class="row">
+            <label class="label">開始</label>
+            <input class="input" type="time" id="entryFrom" />
+          </div>
+          <div class="row">
+            <label class="label">終了</label>
+            <input class="input" type="time" id="entryTo" />
+          </div>
+        </div>
+
+        <div class="row">
+          <label class="label">メモ</label>
+          <textarea class="textarea" id="entryNote" placeholder="自由メモ"></textarea>
+        </div>
+
+        <div class="check-line">
+          <input type="checkbox" id="entryShared" />
+          <div>
+            <div style="font-size:.84rem;font-weight:900">相手にも表示する</div>
+            <div class="check-sub">共通予定として両方の画面に表示</div>
+          </div>
+        </div>
+
         <div class="actions">
           <button class="btn danger hidden" id="deleteBtn" onclick="deleteEntry()">削除</button>
           <button class="btn ghost" onclick="closeEntryModal()">キャンセル</button>
@@ -493,37 +869,25 @@
     </div>
   </div>
 
-  <!-- Profile Sheet -->
   <div class="sheet" id="profileSheet" onclick="onSheetBg(event,'profileSheet')">
-    <div class="modal" style="max-width:440px">
-      <div class="modalHead"><div class="modalTitle">プロフィール編集</div><button class="close" onclick="closeProfileEditor()">&#x2715;</button></div>
-      <div class="modalBody">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-head">
+        <div class="modal-title">プロフィール編集</div>
+        <button class="close" onclick="closeProfileEditor()">✕</button>
+      </div>
+      <div class="modal-body">
         <div style="display:flex;justify-content:center;margin-bottom:14px" id="profilePreview"></div>
-        <div class="row"><label class="label">名前</label><input class="input" id="profileNameInput" maxlength="18"></div>
-        <div class="row"><label class="label">電話番号</label><input class="input" id="profilePhoneInput" inputmode="tel" placeholder="例: 090-1234-5678"></div>
-        <div class="row"><label class="label">メールアドレス</label><input class="input" id="profileEmailInput" inputmode="email" placeholder="例: sample@example.com"></div>
+
         <div class="row">
-          <label class="label">テーマカラー</label>
-          <select class="select" id="profileThemeSelect" onchange="previewProfileTheme(this.value)">
-            <option value="conan_default">Conan Blue</option>
-            <option value="kaori_default">Kaori Pink</option>
-            <option value="netflix_red">Netflix Red</option>
-            <option value="neon_blue">Neon Blue</option>
-            <option value="soft_pink">Soft Pink</option>
-            <option value="midnight_gold">Midnight Gold</option>
-          </select>
-          <div class="themePreviewRow" id="profileThemePreview"></div>
+          <label class="label">表示名</label>
+          <input class="input" id="profileNameInput" maxlength="18" />
         </div>
+
         <div class="row">
-          <label class="label">プロフィール画像: 推奨 400×400px</label>
-          <input class="input" type="file" id="profileFileInput" accept="image/*" onchange="onProfileImageChange(event)">
-          <div class="themeHelp">※ 自動圧縮されます（上限 200KB）</div>
+          <label class="label">プロフィール画像</label>
+          <input class="input" type="file" id="profileFileInput" accept="image/*" onchange="onProfileImageChange(event)" />
         </div>
-        <div class="row">
-          <label class="label">壁紙: 推奨 1200×600px</label>
-          <input class="input" type="file" id="profileWallpaperInput" accept="image/*" onchange="onWallpaperChange(event)">
-          <div class="themeHelp">※ 自動圧縮されます（上限 400KB）</div>
-        </div>
+
         <div class="actions">
           <button class="btn danger" style="margin-right:auto" onclick="removeProfileImage()">画像削除</button>
           <button class="btn ghost" onclick="closeProfileEditor()">キャンセル</button>
@@ -533,1033 +897,866 @@
     </div>
   </div>
 
-  <!-- Settings Sheet -->
-  <div class="sheet" id="settingsSheet" onclick="onSheetBg(event,'settingsSheet')">
-    <div class="modal" style="max-width:660px">
-      <div class="modalHead"><div class="modalTitle">⚙️ 設定 / Gist同期</div><button class="close" onclick="closeSettings()">&#x2715;</button></div>
-      <div class="modalBody">
-        <div class="settingsGrid">
-          <div class="settingCard">
-            <div class="settingTitle">表示設定</div>
-            <div class="toggleRow" style="padding:0"><div class="toggleLabel">月曜始まり</div><label class="switch"><input type="checkbox" id="settingWeekStartsMonday"><span class="slider"></span></label></div>
-            <div class="toggleRow" style="padding:10px 0 0"><div class="toggleLabel">ヒーロー表示</div><label class="switch"><input type="checkbox" id="settingShowHero"><span class="slider"></span></label></div>
-            <div class="toggleRow" style="padding:10px 0 0"><div class="toggleLabel">統計表示</div><label class="switch"><input type="checkbox" id="settingShowStats"><span class="slider"></span></label></div>
-            <div class="toggleRow" style="padding:10px 0 0"><div class="toggleLabel">起動時にプロフィール選択</div><label class="switch"><input type="checkbox" id="settingShowProfileGateOnLaunch"><span class="slider"></span></label></div>
+  <div class="toast-wrap" id="toastWrap"></div>
+
+  <script>
+    const STORAGE_KEY = "the_calendar_v1";
+    const CATS = {
+      work: { label:"仕事", icon:"💼", cls:"work" },
+      private: { label:"プライベート", icon:"🏠", cls:"private" },
+      body: { label:"ボディビル", icon:"💪", cls:"body" },
+      study: { label:"資格勉強", icon:"📚", cls:"study" }
+    };
+
+    const state = {
+      currentUser: "conan",
+      view: "month",
+      monthDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+      selectedDate: dateStr(new Date()),
+      miniDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+      showShared: true,
+      profiles: {
+        conan: { name:"Conan", image:"", wallpaper:"" },
+        kaori: { name:"Kaori", image:"", wallpaper:"" }
+      },
+      entries: {
+        conan: [],
+        kaori: []
+      },
+      filters: {
+        users: ["conan","kaori"],
+        cats: ["work","private","body","study"]
+      }
+    };
+
+    let entryDraft = {
+      id: null,
+      cat: "private",
+      date: "",
+      title: "",
+      from: "",
+      to: "",
+      note: "",
+      shared: false
+    };
+
+    let editingProfileUser = "conan";
+
+    function uid(){
+      return Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+    }
+
+    function dateStr(d){
+      const y = d.getFullYear();
+      const m = String(d.getMonth()+1).padStart(2,"0");
+      const day = String(d.getDate()).padStart(2,"0");
+      return `${y}-${m}-${day}`;
+    }
+
+    function sameMonth(a,b){
+      return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth();
+    }
+
+    function esc(s){
+      return String(s ?? "")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;");
+    }
+
+    function saveLocal(){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function loadLocal(){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return;
+      try{
+        const data = JSON.parse(raw);
+        if(data.currentUser) state.currentUser = data.currentUser;
+        if(data.view) state.view = data.view;
+        if(data.selectedDate) state.selectedDate = data.selectedDate;
+        if(typeof data.showShared === "boolean") state.showShared = data.showShared;
+        if(data.filters) state.filters = { ...state.filters, ...data.filters };
+        if(data.profiles){
+          state.profiles.conan = { ...state.profiles.conan, ...data.profiles.conan };
+          state.profiles.kaori = { ...state.profiles.kaori, ...data.profiles.kaori };
+        }
+        if(data.entries){
+          state.entries.conan = Array.isArray(data.entries.conan) ? data.entries.conan : [];
+          state.entries.kaori = Array.isArray(data.entries.kaori) ? data.entries.kaori : [];
+        }
+      }catch(e){
+        console.error(e);
+      }
+    }
+
+    function profileOf(user){
+      return state.profiles[user];
+    }
+
+    function avatarHTML(user, cls="avatar"){
+      const p = profileOf(user);
+      const first = (p.name || user).trim().charAt(0).toUpperCase() || "?";
+      if(p.image){
+        return `<img src="${p.image}" class="${cls}" alt="${esc(p.name)}">`;
+      }
+      const extra = user === "kaori" ? " style='background:linear-gradient(135deg,#f472b6,#fb7185)'" : "";
+      return `<div class="${cls}"${extra}>${esc(first)}</div>`;
+    }
+
+    function currentName(){
+      return profileOf(state.currentUser).name;
+    }
+
+    function setBodyTheme(){
+      document.body.classList.toggle("user-conan", state.currentUser === "conan");
+      document.body.classList.toggle("user-kaori", state.currentUser === "kaori");
+
+      const wall = profileOf(state.currentUser).wallpaper;
+      const wp = document.getElementById("wallpaper");
+      wp.style.backgroundImage = wall ? `url(${wall})` : "none";
+    }
+
+    function renderUserSwitcher(){
+      const el = document.getElementById("userSwitcher");
+      el.innerHTML = ["conan","kaori"].map(user => `
+        <button class="user-pill ${state.currentUser===user ? "active":""}" onclick="switchUser('${user}')">
+          ${avatarHTML(user,"avatar")}
+          <div style="text-align:left">
+            <div class="user-pill-title">${esc(profileOf(user).name)}</div>
+            <div class="user-pill-sub">${user==="conan" ? "あなた" : "パートナー"}</div>
           </div>
-          <div class="settingCard">
-            <div class="settingTitle">🔄 Gist同期</div>
-            <div class="row"><label class="label">GitHub Personal Access Token</label><input class="input mono" id="gistTokenInput" type="password" placeholder="ghp_..."><div class="settingHint">※ gistスコープが必要です</div></div>
-            <div class="row"><label class="label">Gist ID</label><input class="input mono" id="gistIdInput" placeholder="Gist IDを貼り付け（新規は空欄）"></div>
-            <div class="toggleRow" style="padding:0"><div class="toggleLabel">自動同期（保存時＋30秒ポーリング）</div><label class="switch"><input type="checkbox" id="settingAutoSync"><span class="slider"></span></label></div>
-            <div class="statusLine"><span>最終同期</span><strong id="gistStatusText">-</strong></div>
-            <div class="syncButtons">
-              <button class="btn primary" onclick="saveSettings()">設定保存</button>
-              <button class="btn ghost" onclick="syncToGist(true)">↑ Gistへ保存</button>
-              <button class="btn ghost" onclick="pullFromGist(true)">↓ Gistから取得</button>
-              <button class="btn ghost" onclick="closeSettings()">閉じる</button>
+        </button>
+      `).join("");
+    }
+
+    function renderProfileGate(){
+      const el = document.getElementById("profileGateGrid");
+      el.innerHTML = ["conan","kaori"].map(user => `
+        <div class="profile-card" onclick="chooseProfile('${user}')">
+          <div style="display:flex;justify-content:center">${avatarHTML(user,"avatar xl")}</div>
+          <div class="profile-name">${esc(profileOf(user).name)}</div>
+          <button class="profile-edit" onclick="event.stopPropagation(); openProfileEditor('${user}')">編集</button>
+        </div>
+      `).join("");
+    }
+
+    function renderTop(){
+      document.getElementById("topTitle").textContent =
+        state.view === "month"
+          ? `${currentName()} のカレンダー`
+          : `${currentName()} の一覧`;
+
+      const d = state.monthDate;
+      document.getElementById("monthText").textContent = `${d.getFullYear()}年 ${d.getMonth()+1}月`;
+
+      document.querySelectorAll("[data-view-btn]").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.viewBtn === state.view);
+      });
+      document.querySelectorAll("[data-bottom-view]").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.bottomView === state.view);
+      });
+
+      document.getElementById("sharedToggle").checked = state.showShared;
+      document.getElementById("bottomProfileIcon").innerHTML = avatarHTML(state.currentUser,"avatar xs");
+    }
+
+    function getVisibleEntriesByDate(dt){
+      const mine = state.entries[state.currentUser].filter(e => e.date === dt);
+      const otherUser = state.currentUser === "conan" ? "kaori" : "conan";
+      const other = state.entries[otherUser].filter(e => e.date === dt);
+      const visibleOther = state.showShared ? other : other.filter(e => e.shared);
+      return [...mine, ...visibleOther];
+    }
+
+    function renderHero(){
+      const p = profileOf(state.currentUser);
+      const currentMonthEntries = state.entries[state.currentUser].filter(e => {
+        const d = new Date(e.date);
+        return d.getFullYear() === state.monthDate.getFullYear() && d.getMonth() === state.monthDate.getMonth();
+      });
+      const todayCount = getVisibleEntriesByDate(dateStr(new Date())).length;
+      const heroBg = p.wallpaper
+        ? `style="background-image:linear-gradient(90deg, rgba(0,0,0,.82), rgba(0,0,0,.28)), url('${p.wallpaper}')"`
+        : "";
+
+      return `
+        <section class="hero" ${heroBg}>
+          <div class="hero-inner">
+            <div class="hero-kicker">THE CALENDAR ORIGINAL</div>
+            <div class="hero-head">
+              ${avatarHTML(state.currentUser,"avatar lg hero-avatar")}
+              <div>
+                <div class="hero-title">${esc(p.name)}</div>
+                <div class="hero-sub">ふたりの予定を、Netflixライクな空気感で。</div>
+              </div>
+            </div>
+            <div class="hero-badges">
+              <span class="hero-badge">📅 ${state.monthDate.getFullYear()}年 ${state.monthDate.getMonth()+1}月</span>
+              <span class="hero-badge">📝 今月 ${currentMonthEntries.length}件</span>
+              <span class="hero-badge">🔔 今日 ${todayCount}件</span>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderStats(){
+      const monthEntries = state.entries[state.currentUser].filter(e => {
+        const d = new Date(e.date);
+        return d.getFullYear() === state.monthDate.getFullYear() && d.getMonth() === state.monthDate.getMonth();
+      });
+
+      const work = monthEntries.filter(e => e.cat === "work").length;
+      const priv = monthEntries.filter(e => e.cat === "private").length;
+      const body = monthEntries.filter(e => e.cat === "body").length;
+      const study = monthEntries.filter(e => e.cat === "study").length;
+
+      return `
+        <section class="stats">
+          <div class="stat"><div class="stat-icon">💼</div><div><div class="stat-value">${work}</div><div class="stat-label">仕事</div></div></div>
+          <div class="stat"><div class="stat-icon">🏠</div><div><div class="stat-value">${priv}</div><div class="stat-label">プライベート</div></div></div>
+          <div class="stat"><div class="stat-icon">💪</div><div><div class="stat-value">${body}</div><div class="stat-label">ボディビル</div></div></div>
+          <div class="stat"><div class="stat-icon">📚</div><div><div class="stat-value">${study}</div><div class="stat-label">資格勉強</div></div></div>
+        </section>
+      `;
+    }
+
+    function renderMonthView(){
+      const d = state.monthDate;
+      const year = d.getFullYear();
+      const month = d.getMonth();
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month+1, 0).getDate();
+      const prevMonthDays = new Date(year, month, 0).getDate();
+      const today = dateStr(new Date());
+      const dows = ["日","月","火","水","木","金","土"];
+
+      let head = `<div class="grid-head">${dows.map((w,i)=>`<div class="dow" style="${i===0?'color:#ff8f99':i===6?'color:#7cb6ff':''}">${w}</div>`).join("")}</div>`;
+      let cells = "";
+
+      for(let i=firstDay-1;i>=0;i--){
+        const day = prevMonthDays - i;
+        const dt = dateStr(new Date(year, month-1, day));
+        cells += renderCell(dt, day, true, today);
+      }
+      for(let day=1; day<=daysInMonth; day++){
+        const dt = dateStr(new Date(year, month, day));
+        cells += renderCell(dt, day, false, today);
+      }
+      const total = firstDay + daysInMonth;
+      const next = total % 7 === 0 ? 0 : 7 - (total % 7);
+      for(let day=1; day<=next; day++){
+        const dt = dateStr(new Date(year, month+1, day));
+        cells += renderCell(dt, day, true, today);
+      }
+
+      document.getElementById("content").innerHTML = `
+        ${renderHero()}
+        ${renderStats()}
+        ${head}
+        <section class="calendar">${cells}</section>
+      `;
+    }
+
+    function renderCell(dt, day, other, today){
+      const items = getVisibleEntriesByDate(dt).sort((a,b)=>(a.from||"99:99").localeCompare(b.from||"99:99"));
+      const isToday = dt === today;
+      const selected = dt === state.selectedDate;
+
+      return `
+        <div class="cell ${other ? "other":""} ${isToday ? "today":""} ${selected ? "selected":""}" onclick="openEntryModal(null,'${dt}')">
+          <div class="cell-top">
+            <div class="date-num">${day}</div>
+            ${items.length ? `<div class="goal-chip">${items.length}件</div>` : ``}
+          </div>
+          <div class="chips">
+            ${items.map(e=>{
+              const cat = CATS[e.cat];
+              const time = e.from ? `${e.from}${e.to ? "〜"+e.to : ""} ` : "";
+              return `<div class="chip ${cat.cls} ${e.shared ? "shared":""}" onclick="event.stopPropagation();openEntryModal('${e.id}')">${cat.icon} ${esc(time + e.title)}</div>`;
+            }).join("")}
+          </div>
+          <button class="add-mini" onclick="event.stopPropagation();openEntryModal(null,'${dt}')">＋</button>
+        </div>
+      `;
+    }
+
+    function renderListView(){
+      const datesSet = new Set();
+
+      state.filters.users.forEach(user => {
+        state.entries[user].forEach(e => {
+          if(state.filters.cats.includes(e.cat)) datesSet.add(e.date);
+        });
+      });
+
+      const dates = [...datesSet].sort();
+
+      const html = `
+        ${renderHero()}
+        ${renderStats()}
+        ${renderFilters()}
+        <section class="feed-wrap">
+          ${dates.length ? dates.map(dt => renderFeedDay(dt)).join("") : `<div style="text-align:center;color:var(--sub);padding:50px 0">表示できる予定がありません</div>`}
+        </section>
+      `;
+
+      document.getElementById("content").innerHTML = html;
+    }
+
+    function renderFilters(){
+      const userChip = (u,label)=>`
+        <button class="filter-chip ${state.filters.users.includes(u) ? "active":""}" onclick="toggleFilterUser('${u}')">${label}</button>
+      `;
+      const catChip = key => `
+        <button class="filter-chip ${state.filters.cats.includes(key) ? "active":""}" onclick="toggleFilterCat('${key}')">${CATS[key].icon} ${CATS[key].label}</button>
+      `;
+
+      return `
+        <div class="filters">
+          <div class="filter-row">
+            <div class="filter-label">User</div>
+            ${userChip("conan","Conan")}
+            ${userChip("kaori","Kaori")}
+          </div>
+          <div class="filter-row">
+            <div class="filter-label">Category</div>
+            ${Object.keys(CATS).map(catChip).join("")}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderFeedDay(dt){
+      const d = new Date(dt);
+      const dows = ["日","月","火","水","木","金","土"];
+
+      const items = [];
+      state.filters.users.forEach(u => {
+        state.entries[u]
+          .filter(e => e.date === dt && state.filters.cats.includes(e.cat))
+          .forEach(e => {
+            if(u === state.currentUser || state.showShared || e.shared){
+              items.push(e);
+            }
+          });
+      });
+
+      items.sort((a,b)=>(a.from||"99:99").localeCompare(b.from||"99:99"));
+      if(!items.length) return "";
+
+      return `
+        <div class="feed-day-head">
+          <div class="feed-line"></div>
+          <div class="feed-date">${d.getMonth()+1}月${d.getDate()}日(${dows[d.getDay()]})</div>
+          <div class="feed-line"></div>
+        </div>
+        ${items.map(renderFeedCard).join("")}
+      `;
+    }
+
+    function renderFeedCard(e){
+      const owner = profileOf(e.user);
+      const cat = CATS[e.cat];
+      const time = e.from ? `${e.from}${e.to ? "〜"+e.to : ""}` : "時刻未設定";
+      return `
+        <div class="feed-card" onclick="openEntryModal('${e.id}')">
+          <div class="feed-top">
+            ${avatarHTML(e.user,"avatar round")}
+            <div style="flex:1">
+              <div class="feed-title">${cat.icon} ${esc(e.title)} <span style="font-size:.72rem;color:var(--accent);font-weight:900">${esc(time)}</span></div>
+              <div class="feed-sub">${esc(owner.name)} ・ ${esc(cat.label)} ${e.shared ? "・ 共通" : ""}</div>
+              ${e.note ? `<div class="feed-note">${esc(e.note)}</div>` : ``}
+              <div class="feed-tags">
+                <span class="tag">${cat.label}</span>
+                ${e.shared ? `<span class="tag">共通</span>` : ``}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="toastWrap" id="toastWrap"></div>
-
-  <script>
-  (function(){
-    'use strict';
-
-    var STORAGE_KEY = 'the_calendar_v4';
-    var SYNC_FILE_NAME = 'the-calendar-sync.json';
-    var POLL_INTERVAL = 30000; // 30秒ポーリング
-
-    var CATS = {
-      work:    {label:'仕事',         icon:'💼', cls:'work'},
-      private: {label:'プライベート', icon:'💛', cls:'private'},
-      body:    {label:'体・健康',     icon:'🏃', cls:'body'},
-      study:   {label:'勉強',         icon:'📚', cls:'study'},
-      holiday: {label:'祝日',         icon:'🎌', cls:'holiday'},
-      dayoff:  {label:'休暇',         icon:'🌿', cls:'dayoff'}
-    };
-
-    var DAYOFF_TYPES = ['有給休暇','代休','午前半休','午後半休','夏季休暇','GW','年末年始'];
-
-    var THEMES = {
-      conan_default:  {label:'Conan Blue',    accent:'#4f8ef7', accent2:'#7b5ff8', soft:'rgba(79,142,247,.16)'},
-      kaori_default:  {label:'Kaori Pink',    accent:'#f472b6', accent2:'#fb7185', soft:'rgba(244,114,182,.16)'},
-      netflix_red:    {label:'Netflix Red',   accent:'#e50914', accent2:'#b20710', soft:'rgba(229,9,20,.16)'},
-      neon_blue:      {label:'Neon Blue',     accent:'#2dd4ff', accent2:'#2563eb', soft:'rgba(45,212,255,.16)'},
-      soft_pink:      {label:'Soft Pink',     accent:'#f9a8d4', accent2:'#ec4899', soft:'rgba(249,168,212,.16)'},
-      midnight_gold:  {label:'Midnight Gold', accent:'#eab308', accent2:'#a16207', soft:'rgba(234,179,8,.16)'}
-    };
-
-    var DEFAULT_SETTINGS = {weekStartsMonday:false,showHero:true,showStats:true,showProfileGateOnLaunch:true};
-    var DEFAULT_SYNC = {gistId:'',githubToken:'',autoSync:false,lastSyncAt:''};
-
-    var state = {
-      currentUser:'conan',
-      view:'month',
-      monthDate:new Date(new Date().getFullYear(),new Date().getMonth(),1),
-      selectedDate:dateStr(new Date()),
-      miniDate:new Date(new Date().getFullYear(),new Date().getMonth(),1),
-      showShared:true,
-      profiles:{
-        conan:{name:'Conan',image:'',wallpaper:'',theme:'conan_default',phone:'',email:''},
-        kaori:{name:'Kaori',image:'',wallpaper:'',theme:'kaori_default',phone:'',email:''}
-      },
-      entries:{conan:[],kaori:[],shared_holidays:[]},
-      filters:{users:['conan','kaori'],cats:['work','private','body','study','holiday','dayoff']},
-      settings:JSON.parse(JSON.stringify(DEFAULT_SETTINGS)),
-      sync:JSON.parse(JSON.stringify(DEFAULT_SYNC))
-    };
-
-    var entryDraft = {};
-    var editingProfileUser = 'conan';
-    var splashDone = false;
-    var syncTimer = null;
-    var pollTimer = null;
-    var syncInFlight = false;
-
-    /* ===== UTILS ===== */
-    function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
-    function dateStr(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
-    function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-    function formatIsoLocal(iso){
-      if(!iso) return '-';
-      try{
-        var d=new Date(iso);
-        return d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
-      }catch(e){return '-';}
+      `;
     }
 
-    /* ===== Canvas圧縮 ===== */
-    function compressImage(file, maxW, maxH, quality, maxBytes, cb){
-      var reader = new FileReader();
-      reader.onload = function(e){
-        var img = new Image();
-        img.onload = function(){
-          var w=img.width, h=img.height;
-          if(w>maxW||h>maxH){ var ratio=Math.min(maxW/w,maxH/h); w=Math.round(w*ratio); h=Math.round(h*ratio); }
-          var canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
-          canvas.getContext('2d').drawImage(img,0,0,w,h);
-          var q=quality, result=canvas.toDataURL('image/jpeg',q);
-          while(result.length>maxBytes&&q>0.2){ q-=0.1; result=canvas.toDataURL('image/jpeg',Math.max(q,0.1)); }
-          cb(result);
+    function renderMiniCal(){
+      const d = state.miniDate;
+      const y = d.getFullYear();
+      const m = d.getMonth();
+      document.getElementById("miniTitle").textContent = `${y}年 ${m+1}月`;
+
+      const dows = ["日","月","火","水","木","金","土"];
+      const first = new Date(y,m,1).getDay();
+      const last = new Date(y,m+1,0).getDate();
+      let html = dows.map(w=>`<div class="mini-dow">${w}</div>`).join("");
+      for(let i=0;i<first;i++) html += `<div></div>`;
+      for(let day=1;day<=last;day++){
+        const dt = dateStr(new Date(y,m,day));
+        const has = state.entries.conan.some(e=>e.date===dt) || state.entries.kaori.some(e=>e.date===dt);
+        const cls = [
+          "mini-day",
+          dt===dateStr(new Date()) ? "today":"",
+          dt===state.selectedDate ? "selected":"",
+          has ? "has":""
+        ].join(" ").trim();
+        html += `<div class="${cls}" onclick="pickMiniDate('${dt}')">${day}</div>`;
+      }
+      document.getElementById("miniGrid").innerHTML = html;
+    }
+
+    function renderCatTabs(){
+      const el = document.getElementById("catTabs");
+      el.innerHTML = Object.entries(CATS).map(([key,val]) => `
+        <button class="tab ${entryDraft.cat===key ? "active":""}" onclick="setDraftCat('${key}')">${val.icon} ${val.label}</button>
+      `).join("");
+    }
+
+    function setDraftCat(cat){
+      entryDraft.cat = cat;
+      renderCatTabs();
+    }
+
+    function openEntryModal(id=null, dateOverride=null){
+      if(id){
+        const found = [...state.entries.conan, ...state.entries.kaori].find(e => e.id === id);
+        if(!found) return;
+        entryDraft = { ...found };
+        document.getElementById("entryModalTitle").textContent = "予定を編集";
+        document.getElementById("deleteBtn").classList.toggle("hidden", found.user !== state.currentUser);
+      }else{
+        entryDraft = {
+          id: null,
+          user: state.currentUser,
+          cat: "private",
+          date: dateOverride || state.selectedDate || dateStr(new Date()),
+          title: "",
+          from: "",
+          to: "",
+          note: "",
+          shared: false
         };
-        img.onerror=function(){ cb(e.target.result); };
-        img.src=e.target.result;
+        document.getElementById("entryModalTitle").textContent = "予定を追加";
+        document.getElementById("deleteBtn").classList.add("hidden");
+      }
+
+      fillEntryForm();
+      document.getElementById("entrySheet").classList.add("open");
+    }
+
+    function fillEntryForm(){
+      document.getElementById("entryDate").value = entryDraft.date || dateStr(new Date());
+      document.getElementById("entryTitle").value = entryDraft.title || "";
+      document.getElementById("entryFrom").value = entryDraft.from || "";
+      document.getElementById("entryTo").value = entryDraft.to || "";
+      document.getElementById("entryNote").value = entryDraft.note || "";
+      document.getElementById("entryShared").checked = !!entryDraft.shared;
+      document.getElementById("entryDateBadge").textContent = formatDateBadge(entryDraft.date || dateStr(new Date()));
+      renderCatTabs();
+    }
+
+    function closeEntryModal(){
+      document.getElementById("entrySheet").classList.remove("open");
+    }
+
+    function saveEntry(){
+      const date = document.getElementById("entryDate").value;
+      const title = document.getElementById("entryTitle").value.trim();
+      const from = document.getElementById("entryFrom").value;
+      const to = document.getElementById("entryTo").value;
+      const note = document.getElementById("entryNote").value.trim();
+      const shared = document.getElementById("entryShared").checked;
+
+      if(!date){
+        toast("日付を入力してね");
+        return;
+      }
+      if(!title){
+        toast("タイトルを入力してね");
+        return;
+      }
+
+      const payload = {
+        ...entryDraft,
+        user: entryDraft.user || state.currentUser,
+        date, title, from, to, note, shared, cat: entryDraft.cat
+      };
+
+      if(payload.id){
+        const owner = payload.user;
+        const idx = state.entries[owner].findIndex(e => e.id === payload.id);
+        if(idx >= 0){
+          state.entries[owner][idx] = payload;
+        }
+      }else{
+        payload.id = uid();
+        state.entries[state.currentUser].push(payload);
+      }
+
+      state.selectedDate = date;
+      saveLocal();
+      closeEntryModal();
+      renderAll();
+      toast("保存したよ");
+    }
+
+    function deleteEntry(){
+      if(!entryDraft.id) return;
+      if(entryDraft.user !== state.currentUser){
+        toast("相手の予定は削除できないよ");
+        return;
+      }
+      state.entries[state.currentUser] = state.entries[state.currentUser].filter(e => e.id !== entryDraft.id);
+      saveLocal();
+      closeEntryModal();
+      renderAll();
+      toast("削除したよ");
+    }
+
+    function formatDateBadge(dt){
+      const d = new Date(dt);
+      const w = ["日","月","火","水","木","金","土"][d.getDay()];
+      return `${d.getMonth()+1}/${d.getDate()} (${w})`;
+    }
+
+    function openProfileGate(){
+      document.getElementById("profileGate").classList.add("open");
+      renderProfileGate();
+    }
+
+    function closeProfileGate(){
+      document.getElementById("profileGate").classList.remove("open");
+    }
+
+    function chooseProfile(user){
+      switchUser(user);
+      closeProfileGate();
+    }
+
+    function switchUser(user){
+      state.currentUser = user;
+      saveLocal();
+      setBodyTheme();
+      renderAll();
+      closeSidebar();
+    }
+
+    function openProfileEditor(user){
+      editingProfileUser = user;
+      const p = profileOf(user);
+      document.getElementById("profileNameInput").value = p.name || "";
+      document.getElementById("profilePreview").innerHTML = avatarHTML(user,"avatar xl");
+      document.getElementById("profileSheet").classList.add("open");
+    }
+
+    function closeProfileEditor(){
+      document.getElementById("profileSheet").classList.remove("open");
+      document.getElementById("profileFileInput").value = "";
+    }
+
+    function onProfileImageChange(event){
+      const file = event.target.files && event.target.files[0];
+      if(!file) return;
+      if(file.size > 4 * 1024 * 1024){
+        toast("画像は4MB以下にしてね");
+        event.target.value = "";
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = e => {
+        state.profiles[editingProfileUser].image = e.target.result;
+        if(!state.profiles[editingProfileUser].wallpaper){
+          state.profiles[editingProfileUser].wallpaper = e.target.result;
+        }
+        document.getElementById("profilePreview").innerHTML = avatarHTML(editingProfileUser,"avatar xl");
       };
       reader.readAsDataURL(file);
     }
 
-    /* ===== STORAGE ===== */
-    function saveLocal(){
-      try{
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      }catch(e){
-        if(e.name==='QuotaExceededError'||String(e).includes('quota')||String(e).includes('exceeded')){
-          toast('⚠️ ストレージ容量不足のため画像を除いて保存します');
-          try{
-            var slim=JSON.parse(JSON.stringify(state));
-            slim.profiles.conan.image=''; slim.profiles.kaori.image='';
-            slim.profiles.conan.wallpaper=''; slim.profiles.kaori.wallpaper='';
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(slim));
-          }catch(e2){ console.error('saveLocal fallback failed:',e2); }
-        } else { console.warn('saveLocal:',e); }
-      }
-    }
-
-    function loadLocal(){
-      var raw=null;
-      try{ raw=localStorage.getItem(STORAGE_KEY); }catch(e){}
-      if(!raw){ try{ raw=localStorage.getItem('the_calendar_v3'); }catch(e){} }
-      if(!raw){ normalizeState(); return; }
-      try{
-        var data=JSON.parse(raw);
-        if(data.currentUser) state.currentUser=data.currentUser;
-        if(data.view) state.view=data.view;
-        if(data.selectedDate) state.selectedDate=data.selectedDate;
-        if(typeof data.showShared==='boolean') state.showShared=data.showShared;
-        if(data.filters) state.filters=Object.assign({},state.filters,data.filters);
-        if(data.settings) state.settings=Object.assign({},state.settings,data.settings);
-        if(data.sync) state.sync=Object.assign({},state.sync,data.sync);
-        if(data.profiles){
-          if(data.profiles.conan) state.profiles.conan=Object.assign({},state.profiles.conan,data.profiles.conan);
-          if(data.profiles.kaori) state.profiles.kaori=Object.assign({},state.profiles.kaori,data.profiles.kaori);
-        }
-        if(data.entries){
-          state.entries.conan=Array.isArray(data.entries.conan)?data.entries.conan:[];
-          state.entries.kaori=Array.isArray(data.entries.kaori)?data.entries.kaori:[];
-          state.entries.shared_holidays=Array.isArray(data.entries.shared_holidays)?data.entries.shared_holidays:[];
-        }
-      }catch(e){ console.error('loadLocal:',e); }
-      normalizeState();
-    }
-
-    function normalizeState(){
-      if(!state.profiles.conan.name) state.profiles.conan.name='Conan';
-      if(!state.profiles.kaori.name) state.profiles.kaori.name='Kaori';
-      if(!state.profiles.conan.theme) state.profiles.conan.theme='conan_default';
-      if(!state.profiles.kaori.theme) state.profiles.kaori.theme='kaori_default';
-      ['conan','kaori'].forEach(function(u){
-        ['phone','email','image','wallpaper'].forEach(function(k){ if(!(k in state.profiles[u])) state.profiles[u][k]=''; });
-      });
-      state.settings=Object.assign({},DEFAULT_SETTINGS,state.settings||{});
-      state.sync=Object.assign({},DEFAULT_SYNC,state.sync||{});
-      if(!Array.isArray(state.entries.shared_holidays)) state.entries.shared_holidays=[];
-      if(!state.filters.cats.includes('holiday')) state.filters.cats.push('holiday');
-      if(!state.filters.cats.includes('dayoff')) state.filters.cats.push('dayoff');
-    }
-
-    /* ===== THEME ===== */
-    function profileOf(user){ return state.profiles[user]||state.profiles.conan; }
-    function getThemeKey(user){ var p=profileOf(user); return p&&p.theme?p.theme:(user==='kaori'?'kaori_default':'conan_default'); }
-    function getTheme(user){ return THEMES[getThemeKey(user)]||THEMES.conan_default; }
-
-    function setBodyTheme(){
-      document.body.classList.toggle('user-conan',state.currentUser==='conan');
-      document.body.classList.toggle('user-kaori',state.currentUser==='kaori');
-      var p=getTheme(state.currentUser);
-      var r=document.documentElement;
-      r.style.setProperty('--accent',p.accent);
-      r.style.setProperty('--accent2',p.accent2);
-      r.style.setProperty('--accentSoft',p.soft);
-      r.style.setProperty('--accentGrad','linear-gradient(135deg,'+p.accent+','+p.accent2+')');
-      var wall=profileOf(state.currentUser).wallpaper;
-      document.getElementById('wallpaper').style.backgroundImage=wall?'url('+wall+')':'none';
-    }
-
-    /* ===== AVATAR ===== */
-    function createAvatarEl(user, cls){
-      var p=profileOf(user); var palette=getTheme(user);
-      var el=document.createElement('div'); el.className=cls||'avatar';
-      if(p.image){
-        el.style.cssText='background:none;padding:0;overflow:hidden;';
-        var img=document.createElement('img'); img.src=p.image; img.alt=p.name||user;
-        img.style.cssText='width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit;';
-        img.onerror=function(){ el.style.cssText=''; el.style.background='linear-gradient(135deg,'+palette.accent+','+palette.accent2+')'; el.innerHTML=''; el.textContent=(p.name||user).trim().charAt(0).toUpperCase(); };
-        el.appendChild(img);
-      } else {
-        el.style.background='linear-gradient(135deg,'+palette.accent+','+palette.accent2+')';
-        el.textContent=(p.name||user).trim().charAt(0).toUpperCase()||'?';
-      }
-      return el;
-    }
-
-    function renderThemePreview(themeKey){
-      var palette=THEMES[themeKey]||THEMES.conan_default;
-      var host=document.getElementById('profileThemePreview'); if(!host) return;
-      host.innerHTML='<div class="themeSwatch" style="background:linear-gradient(135deg,'+palette.accent+','+palette.accent2+')"></div>'
-        +'<div class="themeSwatch" style="background:'+palette.soft+';border-color:'+palette.accent+'"></div>'
-        +'<span class="themeHelp" style="margin-top:0">'+esc(palette.label)+'</span>';
-    }
-    function previewProfileTheme(k){ renderThemePreview(k); }
-
-    function avatarHTMLString(user, cls){
-      var p=profileOf(user); var palette=getTheme(user); cls=cls||'avatar';
-      var first=(p.name||user).trim().charAt(0).toUpperCase()||'?';
-      if(p.image){
-        return '<div class="'+cls+'" style="background:none;padding:0;overflow:hidden">'
-          +'<img src="'+p.image+'" alt="'+esc(first)+'" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit" onerror="this.parentNode.innerHTML=\''+esc(first)+'\';this.parentNode.style.background=\'linear-gradient(135deg,'+palette.accent+','+palette.accent2+')\';">'
-          +'</div>';
-      }
-      return '<div class="'+cls+'" style="background:linear-gradient(135deg,'+palette.accent+','+palette.accent2+')">'+esc(first)+'</div>';
-    }
-
-    /* ===== RENDER: userSwitcher ===== */
-    function renderUserSwitcher(){
-      var wrap=document.getElementById('userSwitcher'); wrap.innerHTML='';
-      ['conan','kaori'].forEach(function(user){
-        var btn=document.createElement('button'); btn.className='userPill'+(state.currentUser===user?' active':'');
-        btn.onclick=function(){ switchUser(user); };
-        var av=createAvatarEl(user,'avatar'); var nd=document.createElement('div'); nd.style.textAlign='left';
-        nd.innerHTML='<div class="userPillTitle">'+esc(profileOf(user).name)+'</div>';
-        btn.appendChild(av); btn.appendChild(nd); wrap.appendChild(btn);
-      });
-    }
-
-    /* ===== RENDER: profileGate ===== */
-    function renderProfileGate(){
-      var grid=document.getElementById('profileGateGrid'); grid.innerHTML='';
-      ['conan','kaori'].forEach(function(user){
-        var p=profileOf(user); var card=document.createElement('div'); card.className='profileCard';
-        var tap=document.createElement('a'); tap.className='profileTap'; tap.href='#'+user;
-        tap.addEventListener('click',function(e){e.preventDefault();chooseProfile(user);});
-        tap.addEventListener('touchend',function(e){e.preventDefault();chooseProfile(user);});
-        card.appendChild(tap);
-        var avWrap=document.createElement('div'); avWrap.style.cssText='display:flex;justify-content:center';
-        avWrap.appendChild(createAvatarEl(user,'avatar xl')); card.appendChild(avWrap);
-        var nm=document.createElement('div'); nm.className='profileName'; nm.textContent=p.name||user; card.appendChild(nm);
-        var eb=document.createElement('button'); eb.type='button'; eb.className='profileEdit'; eb.textContent='編集';
-        eb.addEventListener('click',function(e){e.stopPropagation();openProfileEditor(user);});
-        eb.addEventListener('touchend',function(e){e.preventDefault();e.stopPropagation();openProfileEditor(user);});
-        card.appendChild(eb); grid.appendChild(card);
-      });
-    }
-
-    /* ===== RENDER: top ===== */
-    function renderTop(){
-      document.getElementById('topTitle').textContent=profileOf(state.currentUser).name||'';
-      var d=state.monthDate;
-      document.getElementById('monthText').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月';
-      document.querySelectorAll('[data-view-btn]').forEach(function(b){ b.classList.toggle('active',b.dataset.viewBtn===state.view); });
-      document.querySelectorAll('[data-bottom-view]').forEach(function(b){ b.classList.toggle('active',b.dataset.bottomView===state.view); });
-      document.getElementById('sharedToggle').checked=state.showShared;
-      var bpi=document.getElementById('bottomProfileIcon'); bpi.innerHTML='';
-      bpi.appendChild(createAvatarEl(state.currentUser,'avatar xs'));
-    }
-
-    /* ===== HOLIDAYS ===== */
-    function getHolidaysForDate(dt){ return state.entries.shared_holidays.filter(function(h){return h.date===dt;}); }
-    function isHolidayDate(dt){ return state.entries.shared_holidays.some(function(h){return h.date===dt;}); }
-
-    /* ===== ENTRIES ===== */
-    function getVisibleEntriesByDate(dt){
-      var mine=state.entries[state.currentUser].filter(function(e){return e.date===dt;});
-      var other=(state.currentUser==='conan'?state.entries.kaori:state.entries.conan).filter(function(e){return e.date===dt;});
-      if(!state.showShared) other=other.filter(function(e){return e.shared;});
-      var hols=state.entries.shared_holidays.filter(function(h){return h.date===dt;});
-      return hols.concat(mine).concat(other);
-    }
-    function getDayItems(dt){
-      var all=getVisibleEntriesByDate(dt);
-      var hols=all.filter(function(e){return e.cat==='holiday';});
-      var rest=all.filter(function(e){return e.cat!=='holiday';}).sort(function(a,b){return (a.from||'99:99').localeCompare(b.from||'99:99');});
-      return hols.concat(rest);
-    }
-
-    /* ===== COUNTDOWN ===== */
-    function getCountdownEntries(){
-      var today=dateStr(new Date()); var seen={}; var result=[];
-      state.entries.conan.concat(state.entries.kaori).forEach(function(e){
-        if(e.countdown&&e.date>=today){ var key=e.date+'__'+e.title; if(!seen[key]){seen[key]=true;result.push(e);} }
-      });
-      return result.sort(function(a,b){return a.date.localeCompare(b.date);});
-    }
-    function calcCountdownDays(dt){
-      var t=new Date();t.setHours(0,0,0,0); var d=new Date(dt);d.setHours(0,0,0,0);
-      return Math.round((d-t)/86400000);
-    }
-    function renderCountdown(){
-      var items=getCountdownEntries();
-      var wrap=document.getElementById('countdownSecWrap'); var list=document.getElementById('countdownList');
-      if(!wrap||!list) return;
-      if(!items.length){wrap.style.display='none';return;}
-      wrap.style.display='';
-      var html='';
-      items.forEach(function(e){
-        var days=calcCountdownDays(e.date);
-        var label=days===0?'今日！':(days===1?'明日':'あと '+days+' 日');
-        var cat=CATS[e.cat]||CATS.private;
-        html+='<div class="countdownCard" onclick="openEntryModal(\''+e.id+'\')">'
-          +'<div class="countdownDays">'+esc(label)+'</div>'
-          +'<div class="countdownLabel">'+esc(cat.icon)+' '+esc(e.title)+'</div>'
-          +'<div class="countdownDate">'+esc(e.date.replace(/-/g,'/')+(e.from?' '+e.from:''))+'</div>'
-          +'</div>';
-      });
-      list.innerHTML=html;
-    }
-
-    /* ===== HERO / STATS ===== */
-    function renderHero(){
-      var p=profileOf(state.currentUser);
-      var me=state.entries[state.currentUser].filter(function(e){ var d=new Date(e.date); return d.getFullYear()===state.monthDate.getFullYear()&&d.getMonth()===state.monthDate.getMonth(); });
-      var tc=getVisibleEntriesByDate(dateStr(new Date())).length;
-      var bg=p.wallpaper?'style="background-image:linear-gradient(90deg,rgba(0,0,0,.82),rgba(0,0,0,.28)),url(\''+p.wallpaper+'\')"':'';
-      var phone=(p.phone&&p.phone.trim())?'<div class="heroContact"><span>📞</span><span>'+esc(p.phone)+'</span></div>':'';
-      var email=(p.email&&p.email.trim())?'<div class="heroContact"><span>✉️</span><span>'+esc(p.email)+'</span></div>':'';
-      var contact=(phone||email)?'<div class="heroContacts">'+phone+email+'</div>':'';
-      return '<section class="hero" '+bg+'><div class="heroInner">'
-        +'<div class="heroKicker">THE CALENDAR</div>'
-        +'<div class="heroHead" id="heroAvatarWrap">'+avatarHTMLString(state.currentUser,'avatar lg')
-        +'<div><div class="heroTitle">'+esc(p.name)+'</div>'+contact+'</div></div>'
-        +'<div class="heroBadges">'
-        +'<span class="heroBadge">📅 '+state.monthDate.getFullYear()+'年'+(state.monthDate.getMonth()+1)+'月</span>'
-        +'<span class="heroBadge">📌 今月'+me.length+'件</span>'
-        +'<span class="heroBadge">☀️ 今日 '+tc+'件</span>'
-        +'</div></div></section>';
-    }
-    function renderStats(){
-      var me=state.entries[state.currentUser].filter(function(e){ var d=new Date(e.date); return d.getFullYear()===state.monthDate.getFullYear()&&d.getMonth()===state.monthDate.getMonth(); });
-      var cnt=function(c){return me.filter(function(e){return e.cat===c;}).length;};
-      return '<section class="stats">'
-        +'<div class="stat"><div class="statIcon">💼</div><div><div class="statValue">'+cnt('work')+'</div><div class="statLabel">仕事</div></div></div>'
-        +'<div class="stat"><div class="statIcon">💛</div><div><div class="statValue">'+cnt('private')+'</div><div class="statLabel">プライベート</div></div></div>'
-        +'<div class="stat"><div class="statIcon">🏃</div><div><div class="statValue">'+cnt('body')+'</div><div class="statLabel">体・健康</div></div></div>'
-        +'<div class="stat"><div class="statIcon">📚</div><div><div class="statValue">'+cnt('study')+'</div><div class="statLabel">勉強</div></div></div>'
-        +'</section>';
-    }
-
-    /* ===== WEEK HELPERS ===== */
-    function getWeekLabels(){ return state.settings.weekStartsMonday?['月','火','水','木','金','土','日']:['日','月','火','水','木','金','土']; }
-    function getWeekIndex(d){ var n=d.getDay(); return state.settings.weekStartsMonday?(n+6)%7:n; }
-    function shortTitle(t){ var s=String(t||''); return s.length>8?s.slice(0,8)+'…':s; }
-    function formatDateLabel(dt){ var d=new Date(dt),ws=['日','月','火','水','木','金','土']; return (d.getMonth()+1)+'月'+d.getDate()+'日('+ws[d.getDay()]+')'; }
-
-    /* ===== DAY FOCUS ===== */
-    function renderDayFocus(){
-      var dt=state.selectedDate||dateStr(new Date());
-      var items=getDayItems(dt); var hols=getHolidaysForDate(dt);
-      var holBar=hols.map(function(h){ return '<div style="color:#ff6b6b;font-size:.76rem;font-weight:900;margin-bottom:4px">🎌 '+esc(h.title)+'</div>'; }).join('');
-      var cards='';
-      if(items.length){
-        items.forEach(function(e){
-          var cat=CATS[e.cat]||CATS.private;
-          var on=(e.user==='shared_holiday')?'':profileOf(e.user||state.currentUser).name;
-          var time=e.from?(e.from+(e.to?' ~ '+e.to:'')):'';
-          var sub=e.dayoffType?' ('+e.dayoffType+')':'';
-          var isHol=e.cat==='holiday';
-          var fn=isHol?'openHolidayModal(\''+e.id+'\')':'openEntryModal(\''+e.id+'\')';
-          cards+='<button type="button" class="agendaCard" onclick="'+fn+'">'
-            +'<div class="agendaTop"><div class="agendaTime" style="'+(isHol?'color:#ff9999':'')+'">'+esc(time||'')+'</div>'
-            +'<div style="flex:1"><div class="agendaTitle" style="'+(isHol?'color:#ff9999':'')+'">'+esc(cat.icon)+' '+esc(e.title)+esc(sub)+'</div>'
-            +'<div class="agendaMeta">'+esc(on)+'  '+esc(cat.label)+(e.shared?' 🔗共有':'')+(e.countdown?' ⏱':'')+'</div>'
-            +(e.note?'<div class="agendaNote">'+esc(e.note)+'</div>':'')
-            +'</div></div></button>';
-        });
-      } else {
-        cards='<div class="emptyState">予定なし<br>「+ 追加」から登録できます</div>';
-      }
-      return '<aside class="dayFocus" id="dayFocusPanel">'
-        +'<div class="dayFocusHead"><div><div class="legendText">選択日</div><div class="dayFocusTitle">'+formatDateLabel(dt)+'</div><div class="dayFocusSub">'+items.length+'件</div></div>'
-        +'<button class="btn primary" onclick="openEntryModal(null,\''+dt+'\')">+ 追加</button></div>'
-        +(holBar?'<div style="margin-bottom:8px">'+holBar+'</div>':'')
-        +'<div class="dayFocusList">'+cards+'</div></aside>';
-    }
-
-    /* ===== MINI CAL ===== */
-    function renderMiniCal(){
-      var d=state.miniDate,y=d.getFullYear(),m=d.getMonth();
-      document.getElementById('miniTitle').textContent=y+'年'+(m+1)+'月';
-      var dows=getWeekLabels(); var first=getWeekIndex(new Date(y,m,1)); var last=new Date(y,m+1,0).getDate();
-      var html=dows.map(function(w){return '<div class="miniDow">'+w+'</div>';}).join('');
-      for(var i=0;i<first;i++) html+='<div></div>';
-      for(var day=1;day<=last;day++){
-        var dt=dateStr(new Date(y,m,day));
-        var has=state.entries.conan.some(function(e){return e.date===dt;})||state.entries.kaori.some(function(e){return e.date===dt;})||state.entries.shared_holidays.some(function(h){return h.date===dt;});
-        var isH=isHolidayDate(dt);
-        var cls='miniDay'+(dt===dateStr(new Date())?' today':'')+(dt===state.selectedDate?' selected':'')+(has?' has':'')+(isH?' holiday':'');
-        html+='<div class="'+cls+'" onclick="pickMiniDate(\''+dt+'\')">'+day+'</div>';
-      }
-      document.getElementById('miniGrid').innerHTML=html;
-    }
-
-    /* ===== MONTH VIEW ===== */
-    function renderMonthView(){
-      var d=state.monthDate,y=d.getFullYear(),m=d.getMonth();
-      var fi=getWeekIndex(new Date(y,m,1)); var dim=new Date(y,m+1,0).getDate(); var pd=new Date(y,m,0).getDate();
-      var today=dateStr(new Date()); var dows=getWeekLabels();
-      var head='<div class="calendarLegend"><div class="legendText">月表示</div><div class="legendPills"><span class="legendPill">タップで選択</span></div></div>'
-        +'<div class="gridHead">'+dows.map(function(w,i){
-          var st='';
-          if(state.settings.weekStartsMonday?i===6:i===0) st='color:#ff8f99';
-          else if(state.settings.weekStartsMonday?i===5:i===6) st='color:#7cb6ff';
-          return '<div class="dow" style="'+st+'">'+w+'</div>';
-        }).join('')+'</div>';
-      var cells='';
-      for(var i=fi-1;i>=0;i--) cells+=renderCell(dateStr(new Date(y,m-1,pd-i)),pd-i,true,today);
-      for(var day=1;day<=dim;day++) cells+=renderCell(dateStr(new Date(y,m,day)),day,false,today);
-      var tot=fi+dim,nx=tot%7===0?0:7-(tot%7);
-      for(var d2=1;d2<=nx;d2++) cells+=renderCell(dateStr(new Date(y,m+1,d2)),d2,true,today);
-      document.getElementById('content').innerHTML=
-        (state.settings.showHero?renderHero():'')+(state.settings.showStats?renderStats():'')
-        +'<section class="monthStage"><div class="calendarCol">'+head+'<section class="calendar">'+cells+'</section></div>'
-        +renderDayFocus()+'</section>';
-      replaceHeroAvatar();
-    }
-
-    function replaceHeroAvatar(){
-      var wrap=document.getElementById('heroAvatarWrap'); if(!wrap) return;
-      var oldAv=wrap.querySelector('.avatar');
-      if(oldAv){ wrap.replaceChild(createAvatarEl(state.currentUser,'avatar lg'),oldAv); }
-    }
-
-    function renderCell(dt,day,other,today){
-      var items=getDayItems(dt); var hols=getHolidaysForDate(dt); var isH=hols.length>0;
-      var nonH=items.filter(function(e){return e.cat!=='holiday';}); var pri=nonH[0];
-      var dots=[]; items.forEach(function(e){if(dots.indexOf(e.cat)<0) dots.push(e.cat);}); dots=dots.slice(0,4);
-      var hBar=hols.map(function(h){return '<div class="holidayBar">🎌 '+esc(h.title)+'</div>';}).join('');
-      var chip='';
-      if(pri){
-        var cat=CATS[pri.cat]||CATS.private;
-        chip='<div class="chip '+cat.cls+(pri.shared?' shared':'')+'">'+esc(cat.icon)+' '+esc(shortTitle(pri.title))+'</div>';
-        if(nonH.length>1) chip+='<div class="moreLine">+'+(nonH.length-1)+'件</div>';
-      }
-      var dotH=dots.map(function(c){return '<span class="dot '+(CATS[c]?CATS[c].cls:c)+'"></span>';}).join('');
-      return '<div class="cell'+(other?' other':'')+(dt===today?' today':'')+(dt===state.selectedDate?' selected':'')+(isH?' is-holiday':'')+'" onclick="selectDate(\''+dt+'\',true)">'
-        +'<div class="cellTop"><div class="dateNum" style="'+(isH?'color:#ff6b6b':'')+'">'+day+'</div>'+(items.length?'<div class="goalChip">'+items.length+'</div>':'')+'</div>'
-        +hBar+'<div class="chips">'+chip+'</div><div class="cellDots">'+dotH+'</div></div>';
-    }
-
-    /* ===== LIST VIEW ===== */
-    function renderListView(){
-      var dm={};
-      state.filters.users.forEach(function(u){ state.entries[u].forEach(function(e){if(state.filters.cats.includes(e.cat)) dm[e.date]=true;}); });
-      state.entries.shared_holidays.forEach(function(h){dm[h.date]=true;});
-      var dates=Object.keys(dm).sort();
-      var feed=dates.length?dates.map(renderFeedDay).join(''):'<div style="text-align:center;color:var(--sub);padding:50px 0;font-size:.9rem">予定がありません</div>';
-      document.getElementById('content').innerHTML=renderHero()+renderStats()+renderFilters()+'<section class="feedWrap">'+feed+'</section>';
-      replaceHeroAvatar();
-    }
-
-    function renderFilters(){
-      var h='<div class="filters"><div class="filterRow"><div class="filterLabel">ユーザー</div>';
-      ['conan','kaori'].forEach(function(u){ h+='<button class="filterChip'+(state.filters.users.includes(u)?' active':'')+'" onclick="toggleFilterUser(\''+u+'\')">'+esc(profileOf(u).name)+'</button>'; });
-      h+='</div><div class="filterRow"><div class="filterLabel">種類</div>';
-      Object.keys(CATS).forEach(function(k){ h+='<button class="filterChip'+(state.filters.cats.includes(k)?' active':'')+'" onclick="toggleFilterCat(\''+k+'\')">'+CATS[k].icon+' '+CATS[k].label+'</button>'; });
-      return h+'</div></div>';
-    }
-
-    function renderFeedDay(dt){
-      var d=new Date(dt),dows=['日','月','火','水','木','金','土'];
-      var hols=state.entries.shared_holidays.filter(function(h){return h.date===dt;}); var items=[];
-      state.filters.users.forEach(function(u){
-        state.entries[u].filter(function(e){return e.date===dt&&state.filters.cats.includes(e.cat);}).forEach(function(e){ if(u===state.currentUser||state.showShared||e.shared) items.push(e); });
-      });
-      if(state.filters.cats.includes('holiday')) hols.forEach(function(h){items.unshift(h);});
-      items.sort(function(a,b){ if(a.cat==='holiday') return -1; if(b.cat==='holiday') return 1; return (a.from||'99:99').localeCompare(b.from||'99:99'); });
-      if(!items.length) return '';
-      var isH=hols.length>0;
-      var html='<div class="feedDayHead"><div class="feedLine"></div>'
-        +'<div class="feedDate" style="'+(isH?'color:#ff9999':'')+'">'+
-        (d.getMonth()+1)+'月'+d.getDate()+'日('+dows[d.getDay()]+')'+(isH?' 🎌':'')
-        +'</div><div class="feedLine"></div></div>';
-      items.forEach(function(e){html+=renderFeedCard(e);}); return html;
-    }
-
-    function renderFeedCard(e){
-      var cat=CATS[e.cat]||CATS.private;
-      var on=(e.user==='shared_holiday')?'':profileOf(e.user||state.currentUser).name;
-      var time=e.from?(e.from+(e.to?' ~ '+e.to:'')):''; var sub=e.dayoffType?' ('+e.dayoffType+')':'';
-      var isHol=e.cat==='holiday'; var fn=isHol?'openHolidayModal(\''+e.id+'\')':'openEntryModal(\''+e.id+'\')';
-      var av=isHol?'<div style="font-size:1.4rem;flex:0 0 auto">🎌</div>':avatarHTMLString(e.user||state.currentUser,'avatar round');
-      return '<div class="feedCard'+(isHol?' holiday-card':'')+'" onclick="'+fn+'">'
-        +'<div class="feedTop">'+av+'<div style="flex:1;min-width:0">'
-        +'<div class="feedTitle" style="'+(isHol?'color:#ff9999':'')+'">'+esc(cat.icon)+' '+esc(e.title)+esc(sub)+(time?' <span style="font-size:.7rem;color:var(--accent);font-weight:900">'+esc(time)+'</span>':'')+'</div>'
-        +'<div class="feedSub">'+esc(on)+'  '+esc(cat.label)+(e.shared?' 🔗共有':'')+(e.countdown?' ⏱':'')+'</div>'
-        +(e.note?'<div class="feedNote">'+esc(e.note)+'</div>':'')
-        +'<div class="feedTags"><span class="tag">'+esc(cat.label)+'</span>'+(e.shared?'<span class="tag">共有</span>':'')+'</div>'
-        +'</div></div></div>';
-    }
-
-    /* ===== CAT TABS ===== */
-    function renderCatTabs(){
-      var h=''; Object.keys(CATS).forEach(function(k){ h+='<button class="tab'+(entryDraft.cat===k?' active':'')+'" onclick="setDraftCat(\''+k+'\')">'+CATS[k].icon+' '+CATS[k].label+'</button>'; });
-      document.getElementById('catTabs').innerHTML=h; updateCatSubUI();
-    }
-    function updateCatSubUI(){
-      var dr=document.getElementById('dayoffTypeRow'); var hr=document.getElementById('holidayNameRow');
-      if(entryDraft.cat==='dayoff'){ dr.classList.remove('hidden');hr.classList.add('hidden');renderDayoffTypes(); }
-      else if(entryDraft.cat==='holiday'){ hr.classList.remove('hidden');dr.classList.add('hidden'); document.getElementById('holidayNameInput').value=entryDraft.holidayName||entryDraft.title||''; }
-      else { dr.classList.add('hidden');hr.classList.add('hidden'); }
-    }
-    function renderDayoffTypes(){
-      var h=''; DAYOFF_TYPES.forEach(function(t){ h+='<button type="button" class="dayoffType'+(entryDraft.dayoffType===t?' active':'')+'" onclick="setDayoffType(\''+t+'\')">'+t+'</button>'; });
-      document.getElementById('dayoffTypes').innerHTML=h;
-    }
-
-    /* ===== ENTRY MODAL ===== */
-    function setDraftCat(cat){
-      entryDraft.cat=cat;
-      if(cat==='holiday'){ entryDraft.shared=true; document.getElementById('entryShared').checked=true; document.getElementById('entryShared').disabled=true; }
-      else { document.getElementById('entryShared').disabled=false; }
-      renderCatTabs();
-    }
-    function setDayoffType(t){ entryDraft.dayoffType=t;entryDraft.title=t; document.getElementById('entryTitle').value=t; renderDayoffTypes(); }
-
-    function openHolidayModal(id){
-      var h=state.entries.shared_holidays.find(function(h){return h.id===id;}); if(!h) return;
-      entryDraft=Object.assign({},h,{cat:'holiday',shared:true});
-      document.getElementById('entryModalTitle').textContent='祝日を編集';
-      var db=document.getElementById('deleteBtn'); db.classList.remove('hidden'); db.onclick=function(){deleteHoliday(id);};
-      fillEntryForm(); document.getElementById('entrySheet').classList.add('open');
-    }
-    function deleteHoliday(id){
-      state.entries.shared_holidays=state.entries.shared_holidays.filter(function(h){return h.id!==id;});
-      saveLocal();closeEntryModal();renderAll();queueAutoSync();toast('祝日を削除しました');
-    }
-    function openEntryModal(id,dateOverride){
-      if(id){
-        var hol=state.entries.shared_holidays.find(function(h){return h.id===id;}); if(hol){openHolidayModal(id);return;}
-        var found=state.entries.conan.concat(state.entries.kaori).find(function(e){return e.id===id;}); if(!found) return;
-        entryDraft=Object.assign({},found);
-        document.getElementById('entryModalTitle').textContent='予定を編集';
-        var db=document.getElementById('deleteBtn'); db.classList.toggle('hidden',found.user!==state.currentUser); db.onclick=deleteEntry;
-      }else{
-        entryDraft={id:null,user:state.currentUser,cat:'private',date:dateOverride||state.selectedDate||dateStr(new Date()),title:'',from:'',to:'',note:'',shared:false,countdown:false,dayoffType:'',holidayName:''};
-        document.getElementById('entryModalTitle').textContent='予定を追加';
-        var db2=document.getElementById('deleteBtn'); db2.classList.add('hidden'); db2.onclick=deleteEntry;
-      }
-      fillEntryForm(); document.getElementById('entrySheet').classList.add('open');
-    }
-    function fillEntryForm(){
-      document.getElementById('entryDate').value=entryDraft.date||dateStr(new Date());
-      document.getElementById('entryTitle').value=entryDraft.title||'';
-      document.getElementById('entryFrom').value=entryDraft.from||'';
-      document.getElementById('entryTo').value=entryDraft.to||'';
-      document.getElementById('entryNote').value=entryDraft.note||'';
-      document.getElementById('entryShared').checked=!!entryDraft.shared;
-      document.getElementById('entryShared').disabled=entryDraft.cat==='holiday';
-      document.getElementById('entryCountdown').checked=!!entryDraft.countdown;
-      document.getElementById('holidayNameInput').value=entryDraft.holidayName||entryDraft.title||'';
-      document.getElementById('entryDateBadge').textContent=formatDateBadge(entryDraft.date||dateStr(new Date()));
-      renderCatTabs();
-    }
-    function closeEntryModal(){ document.getElementById('entrySheet').classList.remove('open'); document.getElementById('entryShared').disabled=false; }
-
-    function saveEntry(){
-      var date=document.getElementById('entryDate').value; if(!date){toast('日付を入力してください');return;}
-      if(entryDraft.cat==='holiday'){
-        var hn=document.getElementById('holidayNameInput').value.trim()||document.getElementById('entryTitle').value.trim();
-        if(!hn){toast('祝日名を入力してください');return;}
-        var hp={id:entryDraft.id||uid(),user:'shared_holiday',cat:'holiday',date:date,title:hn,from:'',to:'',note:document.getElementById('entryNote').value.trim(),shared:true,countdown:false,dayoffType:'',holidayName:hn};
-        if(entryDraft.id){ var idx=state.entries.shared_holidays.findIndex(function(h){return h.id===entryDraft.id;}); if(idx>=0) state.entries.shared_holidays[idx]=hp; else state.entries.shared_holidays.push(hp); }
-        else { state.entries.shared_holidays.push(hp); }
-      }else{
-        var title=document.getElementById('entryTitle').value.trim(); if(!title){toast('タイトルを入力してください');return;}
-        var ep=Object.assign({},entryDraft,{
-          user:entryDraft.user||state.currentUser,date:date,title:title,
-          from:document.getElementById('entryFrom').value, to:document.getElementById('entryTo').value,
-          note:document.getElementById('entryNote').value.trim(),
-          shared:document.getElementById('entryShared').checked,
-          countdown:document.getElementById('entryCountdown').checked,
-          dayoffType:entryDraft.cat==='dayoff'?entryDraft.dayoffType:'', holidayName:''
-        });
-        if(ep.id){ var arr=state.entries[ep.user]; if(arr){var i2=arr.findIndex(function(e){return e.id===ep.id;});if(i2>=0) arr[i2]=ep;} }
-        else { ep.id=uid(); state.entries[state.currentUser].push(ep); }
-      }
-      state.selectedDate=date; saveLocal();closeEntryModal();renderAll();queueAutoSync();toast('保存しました ✓');
-    }
-    function deleteEntry(){
-      if(!entryDraft.id) return;
-      if(entryDraft.cat==='holiday'){deleteHoliday(entryDraft.id);return;}
-      if(entryDraft.user!==state.currentUser){toast('他のユーザーの予定は削除できません');return;}
-      state.entries[state.currentUser]=state.entries[state.currentUser].filter(function(e){return e.id!==entryDraft.id;});
-      saveLocal();closeEntryModal();renderAll();queueAutoSync();toast('削除しました');
-    }
-    function formatDateBadge(dt){ var d=new Date(dt),w=['日','月','火','水','木','金','土'][d.getDay()]; return (d.getMonth()+1)+'/'+d.getDate()+' ('+w+')'; }
-
-    /* ===== PROFILE GATE ===== */
-    function openProfileGate(){ document.getElementById('profileGate').classList.add('open');renderProfileGate(); }
-    function closeProfileGate(){ document.getElementById('profileGate').classList.remove('open'); }
-    function chooseProfile(user){ switchUser(user);closeProfileGate();toast(profileOf(user).name+'でログインしました ✓'); }
-    function switchUser(user){ state.currentUser=user;saveLocal();setBodyTheme();renderAll();closeSidebar(); }
-
-    /* ===== SETTINGS ===== */
-    function openSettings(){
-      document.getElementById('settingWeekStartsMonday').checked=!!state.settings.weekStartsMonday;
-      document.getElementById('settingShowHero').checked=!!state.settings.showHero;
-      document.getElementById('settingShowStats').checked=!!state.settings.showStats;
-      document.getElementById('settingShowProfileGateOnLaunch').checked=!!state.settings.showProfileGateOnLaunch;
-      document.getElementById('gistTokenInput').value=state.sync.githubToken||'';
-      document.getElementById('gistIdInput').value=state.sync.gistId||'';
-      document.getElementById('settingAutoSync').checked=!!state.sync.autoSync;
-      updateSyncStatus();closeSidebar();document.getElementById('settingsSheet').classList.add('open');
-    }
-    function closeSettings(){ document.getElementById('settingsSheet').classList.remove('open'); }
-    function saveSettings(){
-  var isFirstTime = !state.sync.lastSyncAt; 
-  
-  state.settings.weekStartsMonday=document.getElementById('settingWeekStartsMonday').checked;
-  state.settings.showHero=document.getElementById('settingShowHero').checked;
-  state.settings.showStats=document.getElementById('settingShowStats').checked;
-  state.settings.showProfileGateOnLaunch=document.getElementById('settingShowProfileGateOnLaunch').checked;
-  state.sync.githubToken=document.getElementById('gistTokenInput').value.trim();
-  state.sync.gistId=document.getElementById('gistIdInput').value.trim();
-  state.sync.autoSync=document.getElementById('settingAutoSync').checked;
-  
-  saveLocal();
-  closeSettings();
-  renderAll();
-
-  // 初回（履歴なし）かつGistIDが存在する場合は、強制的に取得(Pull)を走らせる
-  if(isFirstTime && state.sync.gistId) {
-    pullFromGist(true);
-  } else {
-    queueAutoSync();
-    if(typeof startPolling === 'function') startPolling();
-  }
-  
-  toast('設定を保存しました ✓');
-}
-
-    /* ===== GIST SYNC（修正済み：res.text()方式＋Bearer＋ポーリング） ===== */
-    function queueAutoSync(){
-      clearTimeout(syncTimer);
-      if(!state.sync.autoSync||!state.sync.githubToken) return;
-      syncTimer=setTimeout(function(){syncToGist(false);},1500);
-    }
-
-    function getSyncPayload(){
-  var pConan = Object.assign({}, state.profiles.conan);
-  var pKaori = Object.assign({}, state.profiles.kaori);
-  pConan.wallpaper = '';
-  pKaori.wallpaper = '';
-  return {
-    version: 4, 
-    savedAt: new Date().toISOString(),
-    profiles: { conan: pConan, kaori: pKaori },
-    entries: {
-      conan: state.entries.conan.slice(),
-      kaori: state.entries.kaori.slice(),
-      shared_holidays: state.entries.shared_holidays.slice()
-    },
-    settings: Object.assign({}, state.settings)
-  };
-}
-
-    function updateSyncStatus(){
-      var el=document.getElementById('gistStatusText');
-      if(el) el.textContent=formatIsoLocal(state.sync.lastSyncAt);
-    }
-
-    async function syncToGist(showToast){
-  if(showToast===undefined) showToast=true;
-
-  // 設定画面が開いている場合、入力欄のTokenをリアルタイムで読み取る
-  if(document.getElementById('settingsSheet').classList.contains('open')){
-    state.sync.githubToken = document.getElementById('gistTokenInput').value.trim();
-    state.sync.gistId = document.getElementById('gistIdInput').value.trim();
-  }
-
-  if(syncInFlight){if(showToast) toast('同期中です...');return;}
-  var token=state.sync.githubToken.trim();
-  if(!token){toast('GitHub Tokenを入力してください');return;}
-  syncInFlight=true;
-  try{
-    var payload=JSON.stringify(getSyncPayload(),null,2);
-    var headers={
-      'Accept':'application/vnd.github+json',
-      'Content-Type':'application/json',
-      'Authorization':'Bearer '+token,
-      'X-GitHub-Api-Version':'2022-11-28'
-    };
-    var url,method,body;
-    if(state.sync.gistId&&state.sync.gistId.trim()){
-      url='https://api.github.com/gists/'+state.sync.gistId.trim(); method='PATCH';
-      body=JSON.stringify({files:{'the-calendar-sync.json':{content:payload}}});
-    }else{
-      url='https://api.github.com/gists'; method='POST';
-      body=JSON.stringify({description:'THE CALENDAR sync',public:false,files:{'the-calendar-sync.json':{content:payload}}});
-    }
-    var res=await fetch(url,{method:method,headers:headers,body:body});
-    var rawText=await res.text();
-    if(!res.ok){
-      var em='Gist APIエラー';
-      try{var j=JSON.parse(rawText);em=j.message||em;}catch(e){}
-      if(res.status===401) em='トークンが無効または期限切れです。GitHubで新しいトークンを発行してください';
-      if(res.status===403) em='アクセスが拒否されました。トークンにgistスコープがあるか確認してください';
-      if(res.status===404) em='Gist IDが見つかりません。IDを確認するか空欄にして再保存してください';
-      if(res.status===422) em='Gist IDの形式が正しくありません';
-      throw new Error(res.status+': '+em);
-    }
-    var json; try{json=JSON.parse(rawText);}catch(e){throw new Error('レスポンスのパースに失敗しました');}
-    if(json.id) state.sync.gistId=json.id;
-    state.sync.lastSyncAt=new Date().toISOString();
-    saveLocal();updateSyncStatus();
-    if(showToast) toast('Gistへ保存しました ✓');
-  }catch(e){
-    console.error('syncToGist:',e);
-    if(showToast) toast('保存エラー: '+e.message);
-  }finally{
-    syncInFlight=false;
-  }
-}
-
-    async function pullFromGist(showToast){
-  if(showToast===undefined) showToast=false;
-
-  // 設定画面が開いている場合、入力欄のTokenをリアルタイムで読み取る
-  if(document.getElementById('settingsSheet').classList.contains('open')){
-    state.sync.githubToken = document.getElementById('gistTokenInput').value.trim();
-    state.sync.gistId = document.getElementById('gistIdInput').value.trim();
-  }
-
-  var token=state.sync.githubToken.trim();
-  var gistId=state.sync.gistId.trim();
-  if(!token||!gistId) return;
-  if(syncInFlight) return;
-  if(showToast) toast('Gistからデータ取得中...');
-  try{
-    var headers={
-      'Accept':'application/vnd.github+json',
-      'Authorization':'Bearer '+token,
-      'X-GitHub-Api-Version':'2022-11-28',
-    };
-    var res=await fetch('https://api.github.com/gists/'+gistId+'?t='+Date.now(),{headers:headers});
-    var rawText=await res.text();
-    if(!res.ok){
-      var em2='Gist APIエラー';
-      try{var j2=JSON.parse(rawText);em2=j2.message||em2;}catch(e){}
-      if(res.status===401) em2='トークンが無効または期限切れです';
-      if(res.status===403) em2='アクセスが拒否されました';
-      if(res.status===404) em2='Gist IDが見つかりません';
-      throw new Error(res.status+': '+em2);
-    }
-    var json2; try{json2=JSON.parse(rawText);}catch(e){throw new Error('レスポンスのパースに失敗しました');}
-    var files=json2.files||{};
-    var file=files['the-calendar-sync.json']||Object.values(files)[0];
-    if(!file) throw new Error('同期ファイルが見つかりません');
-    var content=file.content;
-    if(file.truncated&&file.raw_url){ var rr=await fetch(file.raw_url,{}); content=await rr.text(); }
-    if(!content) throw new Error('データが空です');
-    
-    var data; try{data=JSON.parse(content);}catch(e){throw new Error('データのパースに失敗しました');}
-
-    var remoteSavedAt = new Date(data.savedAt || 0).getTime();
-    var localSavedAt = new Date(state.sync.lastSyncAt || 0).getTime();
-
-    if (remoteSavedAt > localSavedAt) {
-      // ローカルの壁紙を保護
-      var localConanWall = state.profiles.conan.wallpaper || '';
-      var localKaoriWall = state.profiles.kaori.wallpaper || '';
-
-      if(data.profiles) {
-        state.profiles = data.profiles;
-        state.profiles.conan.wallpaper = localConanWall;
-        state.profiles.kaori.wallpaper = localKaoriWall;
-      }
-      if(data.entries) state.entries = data.entries;
-      if(data.settings) state.settings = data.settings;
-
-      state.sync.lastSyncAt = data.savedAt;
-      saveLocal();
-      
-      if(typeof renderAll === 'function') renderAll();
-      updateSyncStatus();
-      if(showToast) toast('Gistから最新データを取得しました ↓');
-    } else {
-      if(showToast) toast('データは既に最新です');
-    }
-  }catch(e){
-    console.error('pullFromGist:',e);
-    if(showToast) toast('取得エラー: '+e.message);
-  }finally{
-    syncInFlight=false;
-  }
-}
-
-    /* ===== ポーリング（30秒ごとに自動pull） ===== */
-    function startPolling(){
-      stopPolling();
-      if(!state.sync.autoSync||!state.sync.githubToken||!state.sync.gistId) return;
-      pollTimer=setInterval(function(){
-        pullFromGist(false); // サイレントpull
-      }, POLL_INTERVAL);
-    }
-    function stopPolling(){
-      if(pollTimer){ clearInterval(pollTimer); pollTimer=null; }
-    }
-
-    /* ===== PROFILE EDITOR ===== */
-    function openProfileEditor(user){
-      editingProfileUser=user; var p=profileOf(user);
-      document.getElementById('profileNameInput').value=p.name||'';
-      document.getElementById('profilePhoneInput').value=p.phone||'';
-      document.getElementById('profileEmailInput').value=p.email||'';
-      document.getElementById('profileThemeSelect').value=p.theme||getThemeKey(user);
-      var prev=document.getElementById('profilePreview'); prev.innerHTML='';
-      prev.appendChild(createAvatarEl(user,'avatar xl'));
-      renderThemePreview(document.getElementById('profileThemeSelect').value);
-      closeSidebar(); document.getElementById('profileSheet').classList.add('open');
-    }
-    function closeProfileEditor(){
-      document.getElementById('profileSheet').classList.remove('open');
-      try{document.getElementById('profileFileInput').value='';}catch(e){}
-      try{document.getElementById('profileWallpaperInput').value='';}catch(e){}
-    }
-    function onProfileImageChange(event){
-      var file=event.target.files&&event.target.files[0]; if(!file) return;
-      toast('圧縮中...');
-      compressImage(file,300,300,0.82,200*1024,function(url){
-        state.profiles[editingProfileUser].image=url;
-        var prev=document.getElementById('profilePreview'); prev.innerHTML='';
-        prev.appendChild(createAvatarEl(editingProfileUser,'avatar xl'));
-        toast('画像を設定しました ('+Math.round(url.length*0.75/1024)+'KB)');
-      });
-    }
-    function onWallpaperChange(event){
-      var file=event.target.files&&event.target.files[0]; if(!file) return;
-      toast('圧縮中...');
-      compressImage(file,1200,600,0.78,400*1024,function(url){
-        state.profiles[editingProfileUser].wallpaper=url;
-        toast('壁紙を設定しました ('+Math.round(url.length*0.75/1024)+'KB)');
-      });
-    }
     function removeProfileImage(){
-      state.profiles[editingProfileUser].image='';
-      var prev=document.getElementById('profilePreview'); prev.innerHTML='';
-      prev.appendChild(createAvatarEl(editingProfileUser,'avatar xl'));
-      toast('画像を削除しました');
+      state.profiles[editingProfileUser].image = "";
+      document.getElementById("profilePreview").innerHTML = avatarHTML(editingProfileUser,"avatar xl");
     }
+
     function saveProfile(){
-      var name=document.getElementById('profileNameInput').value.trim(); if(!name){toast('名前を入力してください');return;}
-      state.profiles[editingProfileUser].name=name;
-      state.profiles[editingProfileUser].phone=document.getElementById('profilePhoneInput').value.trim();
-      state.profiles[editingProfileUser].email=document.getElementById('profileEmailInput').value.trim();
-      state.profiles[editingProfileUser].theme=document.getElementById('profileThemeSelect').value;
-      saveLocal();closeProfileEditor();setBodyTheme();renderAll();queueAutoSync();toast('プロフィールを保存しました ✓');
+      const name = document.getElementById("profileNameInput").value.trim();
+      if(!name){
+        toast("表示名を入力してね");
+        return;
+      }
+      state.profiles[editingProfileUser].name = name;
+      saveLocal();
+      closeProfileEditor();
+      setBodyTheme();
+      renderAll();
+      toast("プロフィールを更新したよ");
     }
 
-    /* ===== CONTROLS ===== */
-    function setView(v){state.view=v;saveLocal();renderAll();}
-    function moveMonth(n){state.monthDate=new Date(state.monthDate.getFullYear(),state.monthDate.getMonth()+n,1);renderAll();}
-    function goToday(){var n=new Date();state.monthDate=new Date(n.getFullYear(),n.getMonth(),1);state.selectedDate=dateStr(n);state.miniDate=new Date(n.getFullYear(),n.getMonth(),1);renderAll();}
-    function miniMove(n){state.miniDate=new Date(state.miniDate.getFullYear(),state.miniDate.getMonth()+n,1);renderMiniCal();}
-    function pickMiniDate(dt){selectDate(dt,true);}
-    function toggleShared(v){state.showShared=v;saveLocal();renderAll();}
-    function toggleFilterUser(u){var a=state.filters.users,i=a.indexOf(u);if(i>=0){if(a.length>1)a.splice(i,1);}else a.push(u);saveLocal();renderListView();}
-    function toggleFilterCat(c){var a=state.filters.cats,i=a.indexOf(c);if(i>=0){if(a.length>1)a.splice(i,1);}else a.push(c);saveLocal();renderListView();}
-    function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');}
-    function closeSidebar(){document.getElementById('sidebar').classList.remove('open');}
-    function onSheetBg(e,id){if(e.target.id===id) document.getElementById(id).classList.remove('open');}
-    function selectDate(dt,scroll){
-      state.selectedDate=dt; var d=new Date(dt);
-      state.monthDate=new Date(d.getFullYear(),d.getMonth(),1);
-      state.miniDate=new Date(d.getFullYear(),d.getMonth(),1);
-      saveLocal();renderAll();
-      if(scroll) setTimeout(function(){
-        if(window.innerWidth>900) return;
-        var el=document.getElementById('dayFocusPanel'); if(!el) return;
-        var tb=document.querySelector('.topbar'); var off=(tb?tb.offsetHeight:0)+12;
-        window.scrollTo({top:Math.max(0,window.scrollY+el.getBoundingClientRect().top-off),behavior:'smooth'});
-      },80);
-    }
-    function printCalendar(){
-      closeEntryModal();closeProfileEditor();closeSettings();closeSidebar();
-      setTimeout(function(){
-        try{window.print();}
-        catch(e){
-          try{
-            var w=window.open('','_blank');
-            if(w){ w.document.write('<html><head><title>印刷</title></head><body>'); w.document.write(document.getElementById('content').innerHTML); w.document.write('</body></html>'); w.document.close(); w.focus(); w.print(); setTimeout(function(){w.close();},1000); }
-          }catch(e2){toast('印刷に失敗しました');}
-        }
-      },150);
+    function setView(view){
+      state.view = view;
+      saveLocal();
+      renderAll();
     }
 
-    /* ===== TOAST ===== */
-    function toast(msg){
-      var wrap=document.getElementById('toastWrap');
-      var el=document.createElement('div');el.className='toast';el.textContent=msg;
+    function moveMonth(diff){
+      state.monthDate = new Date(state.monthDate.getFullYear(), state.monthDate.getMonth() + diff, 1);
+      renderAll();
+    }
+
+    function goToday(){
+      const now = new Date();
+      state.monthDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      state.selectedDate = dateStr(now);
+      state.miniDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      renderAll();
+    }
+
+    function miniMove(diff){
+      state.miniDate = new Date(state.miniDate.getFullYear(), state.miniDate.getMonth()+diff, 1);
+      renderMiniCal();
+    }
+
+    function pickMiniDate(dt){
+      state.selectedDate = dt;
+      const d = new Date(dt);
+      state.monthDate = new Date(d.getFullYear(), d.getMonth(), 1);
+      state.miniDate = new Date(d.getFullYear(), d.getMonth(), 1);
+      renderAll();
+      openEntryModal(null, dt);
+    }
+
+    function toggleShared(v){
+      state.showShared = v;
+      saveLocal();
+      renderAll();
+    }
+
+    function toggleFilterUser(user){
+      const arr = state.filters.users;
+      const idx = arr.indexOf(user);
+      if(idx >= 0){
+        if(arr.length > 1) arr.splice(idx,1);
+      }else{
+        arr.push(user);
+      }
+      saveLocal();
+      renderListView();
+    }
+
+    function toggleFilterCat(cat){
+      const arr = state.filters.cats;
+      const idx = arr.indexOf(cat);
+      if(idx >= 0){
+        if(arr.length > 1) arr.splice(idx,1);
+      }else{
+        arr.push(cat);
+      }
+      saveLocal();
+      renderListView();
+    }
+
+    function toggleSidebar(){
+      document.getElementById("sidebar").classList.toggle("open");
+    }
+
+    function closeSidebar(){
+      document.getElementById("sidebar").classList.remove("open");
+    }
+
+    function onSheetBg(e,id){
+      if(e.target.id === id){
+        document.getElementById(id).classList.remove("open");
+      }
+    }
+
+    function toast(msg){      const wrap = document.getElementById("toastWrap");
+      const el = document.createElement("div");
+      el.className = "toast";
+      el.textContent = msg;
       wrap.appendChild(el);
-      setTimeout(function(){ el.style.transition='opacity .25s ease,transform .25s ease'; el.style.opacity='0'; el.style.transform='translateY(6px)'; setTimeout(function(){if(el.parentNode) el.remove();},260); },2600);
+      setTimeout(() => {
+        el.style.transition = "opacity .25s ease, transform .25s ease";
+        el.style.opacity = "0";
+        el.style.transform = "translateY(6px)";
+        setTimeout(() => el.remove(), 260);
+      }, 2400);
     }
 
-    /* ===== RENDER ALL ===== */
     function renderAll(){
-      setBodyTheme();renderUserSwitcher();renderProfileGate();renderTop();renderMiniCal();renderCountdown();
-      if(state.view==='month') renderMonthView(); else renderListView();
+      setBodyTheme();
+      renderUserSwitcher();
+      renderProfileGate();
+      renderTop();
+      renderMiniCal();
+
+      if(state.view === "month"){
+        renderMonthView();
+      }else{
+        renderListView();
+      }
     }
 
-    /* ===== SEED DEMO ===== */
     function seedDemoIfEmpty(){
-      var total=state.entries.conan.length+state.entries.kaori.length+state.entries.shared_holidays.length;
-      if(total>0) return;
-      var now=new Date(),y=now.getFullYear(),m=now.getMonth(),last=new Date(y,m+1,0).getDate();
-      var d1=dateStr(new Date(y,m,Math.min(3,last))); var d2=dateStr(new Date(y,m,Math.min(7,last)));
-      var d3=dateStr(new Date(y,m,Math.min(12,last))); var d4=dateStr(new Date(y,m,Math.min(18,last)));
-      var d5=dateStr(new Date(y,m,Math.min(22,last)));
+      const total = state.entries.conan.length + state.entries.kaori.length;
+      if(total > 0) return;
+
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = now.getMonth();
+
+      const d1 = dateStr(new Date(y, m, Math.min(3, new Date(y, m + 1, 0).getDate())));
+      const d2 = dateStr(new Date(y, m, Math.min(7, new Date(y, m + 1, 0).getDate())));
+      const d3 = dateStr(new Date(y, m, Math.min(12, new Date(y, m + 1, 0).getDate())));
+      const d4 = dateStr(new Date(y, m, Math.min(18, new Date(y, m + 1, 0).getDate())));
+      const d5 = dateStr(new Date(y, m, Math.min(22, new Date(y, m + 1, 0).getDate())));
+
       state.entries.conan.push(
-        {id:uid(),user:'conan',cat:'work',date:d1,title:'定例MTG',from:'10:00',to:'11:00',note:'',shared:false,countdown:false,dayoffType:'',holidayName:''},
-        {id:uid(),user:'conan',cat:'body',date:d3,title:'ジム',from:'19:30',to:'21:00',note:'',shared:false,countdown:false,dayoffType:'',holidayName:''},
-        {id:uid(),user:'conan',cat:'private',date:d4,title:'デート🍽',from:'19:00',to:'21:30',note:'',shared:true,countdown:true,dayoffType:'',holidayName:''}
+        {
+          id: uid(),
+          user: "conan",
+          cat: "work",
+          date: d1,
+          title: "企画MTG",
+          from: "10:00",
+          to: "11:00",
+          note: "資料最終確認",
+          shared: false
+        },
+        {
+          id: uid(),
+          user: "conan",
+          cat: "body",
+          date: d3,
+          title: "胸・肩トレ",
+          from: "19:30",
+          to: "21:00",
+          note: "ベンチ中心",
+          shared: false
+        },
+        {
+          id: uid(),
+          user: "conan",
+          cat: "private",
+          date: d4,
+          title: "夜ごはんデート",
+          from: "19:00",
+          to: "21:30",
+          note: "共通予定",
+          shared: true
+        }
       );
+
       state.entries.kaori.push(
-        {id:uid(),user:'kaori',cat:'study',date:d2,title:'英語レッスン',from:'21:00',to:'22:30',note:'Unit2',shared:false,countdown:false,dayoffType:'',holidayName:''},
-        {id:uid(),user:'kaori',cat:'dayoff',date:d5,title:'有給休暇',from:'',to:'',note:'',shared:false,countdown:false,dayoffType:'有給休暇',holidayName:''}
+        {
+          id: uid(),
+          user: "kaori",
+          cat: "study",
+          date: d2,
+          title: "資格勉強",
+          from: "21:00",
+          to: "22:30",
+          note: "問題集2章",
+          shared: false
+        },
+        {
+          id: uid(),
+          user: "kaori",
+          cat: "private",
+          date: d5,
+          title: "美容院",
+          from: "14:00",
+          to: "16:00",
+          note: "",
+          shared: false
+        },
+        {
+          id: uid(),
+          user: "kaori",
+          cat: "private",
+          date: d4,
+          title: "夜ごはんデート",
+          from: "19:00",
+          to: "21:30",
+          note: "共通予定",
+          shared: true
+        }
       );
     }
 
-    /* ===== EVENTS ===== */
-    function setupEvents(){
-      var di=document.getElementById('entryDate');
-      if(di) di.addEventListener('change',function(e){ document.getElementById('entryDateBadge').textContent=formatDateBadge(e.target.value||dateStr(new Date())); });
-      document.addEventListener('keydown',function(e){
-        if(e.key==='Escape'){closeEntryModal();closeProfileEditor();closeProfileGate();closeSidebar();closeSettings();}
-        if((e.metaKey||e.ctrlKey)&&e.key==='Enter'&&document.getElementById('entrySheet').classList.contains('open')) saveEntry();
-        if((e.metaKey||e.ctrlKey)&&e.key==='p'){e.preventDefault();printCalendar();}
+    function setupEntryFormEvents(){
+      const dateInput = document.getElementById("entryDate");
+      if(dateInput){
+        dateInput.addEventListener("change", e => {
+          document.getElementById("entryDateBadge").textContent = formatDateBadge(e.target.value || dateStr(new Date()));
+        });
+      }
+    }
+
+    function setupGlobalEvents(){
+      document.addEventListener("keydown", e => {
+        if(e.key === "Escape"){
+          closeEntryModal();
+          closeProfileEditor();
+          closeProfileGate();
+          closeSidebar();
+        }
+
+        if((e.metaKey || e.ctrlKey) && e.key === "Enter"){
+          if(document.getElementById("entrySheet").classList.contains("open")){
+            saveEntry();
+          }
+        }
       });
-      document.addEventListener('click',function(e){
-        var sb=document.getElementById('sidebar'),mb=document.querySelector('.menuBtn');
-        if(window.innerWidth>900||!sb.classList.contains('open')) return;
-        if(!sb.contains(e.target)&&!(mb&&mb.contains(e.target))) closeSidebar();
+
+      document.addEventListener("click", e => {
+        const sidebar = document.getElementById("sidebar");
+        const menuBtn = document.querySelector(".menu-btn");
+        const isMobile = window.innerWidth <= 900;
+
+        if(!isMobile) return;
+        if(!sidebar.classList.contains("open")) return;
+
+        const clickedInsideSidebar = sidebar.contains(e.target);
+        const clickedMenuBtn = menuBtn && menuBtn.contains(e.target);
+
+        if(!clickedInsideSidebar && !clickedMenuBtn){
+          closeSidebar();
+        }
       });
-      window.addEventListener('resize',function(){if(window.innerWidth>900) closeSidebar();});
-      // ページがフォアグラウンドに戻ったときに即座にpull
-      document.addEventListener('visibilitychange',function(){
-        if(document.visibilityState==='visible'&&state.sync.autoSync&&state.sync.githubToken&&state.sync.gistId){
-          pullFromGist(false);
+
+      window.addEventListener("resize", () => {
+        if(window.innerWidth > 900){
+          closeSidebar();
         }
       });
     }
 
-    /* ===== SPLASH / ROUTE ===== */
-    function getSelectedUserFromRoute(){
-      var hash=(location.hash||'').replace('#','').trim().toLowerCase();
-      if(hash==='conan'||hash==='kaori') return hash;
-      var p=new URLSearchParams(location.search).get('user');
-      return (p==='conan'||p==='kaori')?p:'';
-    }
-    function applySelectedUserFromRoute(){
-      var sel=getSelectedUserFromRoute(); if(!sel) return false;
-      state.currentUser=sel;saveLocal();setBodyTheme();renderAll();closeProfileGate(); return true;
-    }
-    function finishSplash(){
-      if(splashDone) return; splashDone=true;
-      var splash=document.getElementById('splash'); var gate=state.settings.showProfileGateOnLaunch;
-      var done=function(){ renderProfileGate(); if(!applySelectedUserFromRoute()&&gate) openProfileGate(); else closeProfileGate(); };
-      if(!splash){done();return;}
-      splash.classList.add('hide');
-      setTimeout(function(){if(splash&&splash.parentNode) splash.parentNode.removeChild(splash);done();},650);
-    }
     function playSplash(){
-      var splash=document.getElementById('splash');
-      if(!splash){ if(!applySelectedUserFromRoute()&&state.settings.showProfileGateOnLaunch) openProfileGate(); else closeProfileGate(); return; }
-      var auto=setTimeout(finishSplash,1700);
-      splash.addEventListener('click',function(){clearTimeout(auto);finishSplash();},{once:true});
-      splash.addEventListener('animationend',function(e){if(e.animationName==='centerPop') finishSplash();},{once:true});
-      setTimeout(finishSplash,3000);
+      const splash = document.getElementById("splash");
+      if(!splash) return;
+
+      setTimeout(() => {
+        splash.classList.add("hide");
+      }, 1800);
+
+      setTimeout(() => {
+        splash.remove();
+        openProfileGate();
+      }, 2450);
     }
 
-    /* ===== INIT ===== */
     function init(){
-      loadLocal();normalizeState();
-      var sel=getSelectedUserFromRoute(); if(sel) state.currentUser=sel;
+      loadLocal();
       seedDemoIfEmpty();
-      setBodyTheme();setupEvents();renderAll();updateSyncStatus();
-      if(sel) closeProfileGate();
-      else if(state.settings.showProfileGateOnLaunch) openProfileGate();
-      else closeProfileGate();
-      window.addEventListener('hashchange',function(){ if(!applySelectedUserFromRoute()&&state.settings.showProfileGateOnLaunch) openProfileGate(); });
-      startPolling(); // ポーリング開始
+      setBodyTheme();
+      setupEntryFormEvents();
+      setupGlobalEvents();
+      renderAll();
       playSplash();
     }
 
-    /* ===== GLOBAL EXPORTS ===== */
-    window.state=state;
-    window.setView=setView;window.moveMonth=moveMonth;window.goToday=goToday;
-    window.miniMove=miniMove;window.pickMiniDate=pickMiniDate;
-    window.toggleShared=toggleShared;window.toggleFilterUser=toggleFilterUser;window.toggleFilterCat=toggleFilterCat;
-    window.toggleSidebar=toggleSidebar;window.closeSidebar=closeSidebar;window.onSheetBg=onSheetBg;
-    window.selectDate=selectDate;
-    window.openEntryModal=openEntryModal;window.closeEntryModal=closeEntryModal;
-    window.saveEntry=saveEntry;window.deleteEntry=deleteEntry;
-    window.setDraftCat=setDraftCat;window.setDayoffType=setDayoffType;
-    window.openHolidayModal=openHolidayModal;
-    window.openProfileGate=openProfileGate;window.closeProfileGate=closeProfileGate;
-    window.chooseProfile=chooseProfile;window.switchUser=switchUser;
-    window.openSettings=openSettings;window.closeSettings=closeSettings;window.saveSettings=saveSettings;
-    window.syncToGist=syncToGist;window.pullFromGist=pullFromGist;
-    window.openProfileEditor=openProfileEditor;window.closeProfileEditor=closeProfileEditor;
-    window.onProfileImageChange=onProfileImageChange;window.onWallpaperChange=onWallpaperChange;
-    window.removeProfileImage=removeProfileImage;window.saveProfile=saveProfile;
-    window.previewProfileTheme=previewProfileTheme;
-    window.printCalendar=printCalendar;
-
     init();
-  })();
   </script>
 </body>
 </html>
+
