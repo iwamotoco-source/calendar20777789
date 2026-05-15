@@ -364,6 +364,18 @@
       .heroTitle{font-size:1.1rem}
       .heroBadge{font-size:.66rem;padding:4px 7px}
     }
+  
+    /* PIN UI */
+    .pinGate{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;transition:opacity 0.3s;}
+    .pinGate.hidden{opacity:0;pointer-events:none;}
+    .pinTitle{font-size:1.2rem;font-weight:900;margin-bottom:20px;letter-spacing:0.1em;}
+    .pinDots{display:flex;gap:15px;margin-bottom:40px;}
+    .pinDot{width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);}
+    .pinDot.filled{background:var(--accent);border-color:var(--accent);}
+    .pinError{color:var(--danger);font-size:0.8rem;margin-bottom:20px;height:1rem;}
+    .pinPad{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;max-width:280px;width:100%;}
+    .pinBtn{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:var(--text);border-radius:50%;width:70px;height:70px;font-size:1.5rem;font-weight:900;display:flex;align-items:center;justify-content:center;cursor:pointer;margin:0 auto;}
+    .pinBtn:active{background:rgba(255,255,255,0.15);}
   </style>
   <link rel="manifest" href="/calendar2026/manifest.json">
   <meta name="theme-color" content="#b51a00">
@@ -387,6 +399,18 @@
       <h1 class="gateTitle"></h1>
       <p class="gateSub"></p>
       <div class="gateGrid" id="profileGateGrid"></div>
+    </div>
+  </div>
+  
+  <div class="pinGate hidden" id="pinGate">
+    <div class="pinTitle">PIN CODE</div>
+    <div class="pinError" id="pinError"></div>
+    <div class="pinDots"><div class="pinDot" id="pd1"></div><div class="pinDot" id="pd2"></div><div class="pinDot" id="pd3"></div><div class="pinDot" id="pd4"></div></div>
+    <div class="pinPad">
+      <button class="pinBtn" onclick="inputPin(1)">1</button><button class="pinBtn" onclick="inputPin(2)">2</button><button class="pinBtn" onclick="inputPin(3)">3</button>
+      <button class="pinBtn" onclick="inputPin(4)">4</button><button class="pinBtn" onclick="inputPin(5)">5</button><button class="pinBtn" onclick="inputPin(6)">6</button>
+      <button class="pinBtn" onclick="inputPin(7)">7</button><button class="pinBtn" onclick="inputPin(8)">8</button><button class="pinBtn" onclick="inputPin(9)">9</button>
+      <div></div><button class="pinBtn" onclick="inputPin(0)">0</button><button class="pinBtn" onclick="clearPin()">C</button>
     </div>
   </div>
   <div class="app">
@@ -595,7 +619,7 @@
     };
 
     var DEFAULT_SETTINGS = {weekStartsMonday:false,showHero:true,showStats:true,showProfileGateOnLaunch:true};
-    var DEFAULT_SYNC = {gistId:'',githubToken:'',autoSync:false,lastSyncAt:''};
+    var DEFAULT_SYNC = {gistId:'0cc0ace61e43ab7603606b686217211c',githubToken:'',autoSync:false,lastSyncAt:'',encryptedToken:'VlpCb0l7A3N0eWFmCXRbdEJAdWJURUJ1c2ZbYWsGSFp8AgBYc35EXw=='};
 
     var state = {
       currentUser:'conan',
@@ -620,6 +644,27 @@
     var syncTimer = null;
     var pollTimer = null;
     var syncInFlight = false;
+
+    
+    /* ===== PIN LOGIC ===== */
+    var currentPin='';
+    function inputPin(n){ if(currentPin.length<4) currentPin+=n; updatePinDots(); if(currentPin.length===4) setTimeout(verifyPin,100); }
+    function clearPin(){ currentPin=''; updatePinDots(); document.getElementById('pinError').textContent=''; }
+    function updatePinDots(){ for(var i=1;i<=4;i++){ document.getElementById('pd'+i).classList.toggle('filled', i<=currentPin.length); } }
+    function xorStr(str, key){ var r=''; for(var i=0;i<str.length;i++) r+=String.fromCharCode(str.charCodeAt(i)^key.charCodeAt(i%key.length)); return r; }
+    function verifyPin(){
+      if(!state.sync.encryptedToken) return;
+      try{
+        var dec=xorStr(atob(state.sync.encryptedToken), currentPin);
+        if(dec.startsWith('ghp_')||dec.startsWith('github_pat_')){
+          state.sync.githubToken=dec;
+          document.getElementById('pinGate').classList.add('hidden');
+          document.getElementById('gistTokenInput').value=dec;
+          document.getElementById('gistIdInput').value=state.sync.gistId;
+          if(state.sync.gistId) pullFromGist(false);
+        } else { throw new Error(); }
+      }catch(e){ document.getElementById('pinError').textContent='PINが違います'; currentPin=''; updatePinDots(); }
+    }
 
     /* ===== UTILS ===== */
     function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
