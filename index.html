@@ -1216,19 +1216,24 @@
     async function syncToGist(showToast){
   if(showToast===undefined) showToast=true;
 
-  // ★ 常に画面の入力欄の値を優先して読み取る
-  var token = document.getElementById('gistTokenInput') ? document.getElementById('gistTokenInput').value.trim() : (state.sync.githubToken || '').trim();
-  var gistId = document.getElementById('gistIdInput') ? document.getElementById('gistIdInput').value.trim() : (state.sync.gistId || '').trim();
+  if(document.getElementById('settingsSheet').classList.contains('open')){
+    state.sync.githubToken = document.getElementById('gistTokenInput').value.trim();
+    state.sync.gistId = document.getElementById('gistIdInput').value.trim();
+  }
+
+  var token = state.sync.githubToken.trim();
+  var gistId = state.sync.gistId.trim();
 
   if(syncInFlight){if(showToast) toast('同期中です...');return;}
-  if(!token){if(showToast) toast('GitHub Tokenを入力してください');return;}
+  if(!token){toast('GitHub Tokenを入力してください');return;}
   syncInFlight=true;
   
   try {
-    var payload = JSON.stringify(getSyncPayload()); 
+    var payload = JSON.stringify(getSyncPayload()); // 余計なインデント(null,2)を廃止しデータ軽量化
     var method = gistId ? 'PATCH' : 'POST';
     var url = gistId ? 'https://api.github.com/gists/' + gistId : 'https://api.github.com/gists';
     
+    // ヘッダーを極限までシンプル化
     var res = await fetch(url, {
       method: method,
       headers: {
@@ -1245,23 +1250,15 @@
     if(!res.ok) throw new Error('保存エラー: ' + res.status);
     
     var json = await res.json();
-    if(json.id) {
-      gistId = json.id;
-      state.sync.gistId = gistId;
-      if(document.getElementById('gistIdInput')) document.getElementById('gistIdInput').value = gistId;
-    }
-    
-    // 保存に成功したら、入力欄の値を state にも保存
-    state.sync.githubToken = token;
+    if(json.id) state.sync.gistId = json.id;
     state.sync.lastSyncAt = new Date().toISOString();
     saveLocal();
     updateSyncStatus();
-    
     if(showToast) toast('Gistへ保存しました ✓');
-  } catch(e) {
+  }catch(e){
     console.error('syncToGist:',e);
     if(showToast) toast('保存エラー: '+e.message);
-  } finally {
+  }finally{
     syncInFlight=false;
   }
 }
@@ -1269,22 +1266,23 @@
     async function pullFromGist(showToast){
   if(showToast===undefined) showToast=false;
 
-  // ★ 常に画面の入力欄の値を優先して読み取る
-  var token = document.getElementById('gistTokenInput') ? document.getElementById('gistTokenInput').value.trim() : (state.sync.githubToken || '').trim();
-  var gistId = document.getElementById('gistIdInput') ? document.getElementById('gistIdInput').value.trim() : (state.sync.gistId || '').trim();
-
-  if(!token) {
-    if(showToast) toast('GitHub Tokenを設定してください');
-    return;
+  if(document.getElementById('settingsSheet').classList.contains('open')){
+    state.sync.githubToken = document.getElementById('gistTokenInput').value.trim();
+    state.sync.gistId = document.getElementById('gistIdInput').value.trim();
   }
-  if(!gistId) return;
 
+  // 余計なサニタイズを廃止し、純粋なtrim()のみにする（Fine-grained Token対応）
+  var token = state.sync.githubToken.trim();
+  var gistId = state.sync.gistId.trim();
+
+  if(!token||!gistId) return;
   if(syncInFlight) return;
   if(showToast) toast('Gistからデータ取得中...');
   
   try {
+    // ヘッダーを極限までシンプル化（PWAコンテナ方式）
     var res = await fetch('https://api.github.com/gists/' + gistId + '?t=' + Date.now(), {
-      headers: { 'Authorization': 'token ' + token }
+      headers: { 'Authorization': 'token ' + token } // Bearerではなくtokenを使用
     });
     
     if(!res.ok) throw new Error('通信エラー: ' + res.status);
@@ -1296,29 +1294,32 @@
     var content = file.truncated && file.raw_url ? await (await fetch(file.raw_url)).text() : file.content;
     var data = JSON.parse(content);
 
-    var localConanWall = state.profiles.conan.wallpaper || '';
-    var localKaoriWall = state.profiles.kaori.wallpaper || '';
-    if(data.profiles) {
-      state.profiles = data.profiles;
-      state.profiles.conan.wallpaper = localConanWall;
-      state.profiles.kaori.wallpaper = localKaoriWall;
-    }
-    if(data.entries) state.entries = data.entries;
-    if(data.settings) state.settings = data.settings;
+    var remoteSavedAt = new Date(data.savedAt || 0).getTime();
+    var localSavedAt = new Date(state.sync.lastSyncAt || 0).getTime();
 
-    // 取得に成功したら、入力欄の値を state にも保存
-    state.sync.githubToken = token;
-    state.sync.gistId = gistId;
-    state.sync.lastSyncAt = data.savedAt || new Date().toISOString();
-    saveLocal();
-    if(typeof renderAll === 'function') renderAll();
-    updateSyncStatus();
-    
-    if(showToast) toast('Gistから最新データを取得しました ↓');
-  } catch(e) {
+    if (remoteSavedAt > localSavedAt) {
+      var localConanWall = state.profiles.conan.wallpaper || '';
+      var localKaoriWall = state.profiles.kaori.wallpaper || '';
+      if(data.profiles) {
+        state.profiles = data.profiles;
+        state.profiles.conan.wallpaper = localConanWall;
+        state.profiles.kaori.wallpaper = localKaoriWall;
+      }
+      if(data.entries) state.entries = data.entries;
+      if(data.settings) state.settings = data.settings;
+
+      state.sync.lastSyncAt = data.savedAt;
+      saveLocal();
+      if(typeof renderAll === 'function') renderAll();
+      updateSyncStatus();
+      if(showToast) toast('Gistから最新データを取得しました ↓');
+    } else {
+      if(showToast) toast('データは既に最新です');
+    }
+  }catch(e){
     console.error('pullFromGist:',e);
     if(showToast) toast('取得エラー: '+e.message);
-  } finally {
+  }finally{
     syncInFlight=false;
   }
 }
