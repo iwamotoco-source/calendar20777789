@@ -1209,20 +1209,13 @@
       state.settings.showStats = document.getElementById('settingShowStats').checked;
       state.settings.showProfileGateOnLaunch = document.getElementById('settingShowProfileGateOnLaunch').checked;
       state.sync.autoSync = document.getElementById('settingAutoSync').checked;
-
       var rawToken = document.getElementById('gistTokenInput').value;
       var rawId = document.getElementById('gistIdInput').value;
       state.sync.githubToken = rawToken.replace(/[^a-zA-Z0-9_-]/g, '');
       state.sync.gistId = rawId.replace(/[^a-zA-Z0-9_-]/g, '');
-
       saveLocal(); applySettings(); toast('設定を保存しました ✓');
-
-      if(!state.sync.lastSyncAt && state.sync.gistId && state.sync.githubToken){
-        pullFromGist(true);
-      } else {
-        if(typeof queueAutoSync === 'function') queueAutoSync();
-        else syncToGist(false);
-      }
+      if(!state.sync.lastSyncAt && state.sync.gistId && state.sync.githubToken) pullFromGist(true);
+      else if(typeof queueAutoSync === 'function') queueAutoSync(); else syncToGist(false);
     }
 
     /* ===== GIST SYNC（修正済み：res.text()方式＋Bearer＋ポーリング） ===== */
@@ -1261,26 +1254,19 @@
         state.sync.gistId = document.getElementById('gistIdInput').value.replace(/[^a-zA-Z0-9_-]/g, '');
       }
       var t=state.sync.githubToken; var id=state.sync.gistId;
-      if(!t||!id) { if(isManual) toast('TokenまたはIDが空です'); return; }
+      if(!t||!id) { if(isManual) toast('TokenかIDが空です'); return; }
       if(syncInFlight) return; syncInFlight=true;
       if(isManual) document.getElementById('gistStatusText').textContent='保存中...';
-
       var payload = JSON.parse(JSON.stringify(state));
       payload.profiles.conan.wallpaper=''; payload.profiles.kaori.wallpaper='';
       var ts = new Date().toISOString(); payload.sync.lastSyncAt = ts;
-
       fetch('https://api.github.com/gists/'+id, {
         method:'PATCH', headers:{'Accept':'application/vnd.github+json', 'Authorization':'token '+t, 'Content-Type':'application/json'},
         body:JSON.stringify({files:{'the-calendar-sync.json':{content:JSON.stringify(payload)}}})
       }).then(function(res){
         syncInFlight=false;
-        if(res.ok){
-          state.sync.lastSyncAt=ts; saveLocal();
-          document.getElementById('gistStatusText').textContent=formatIsoLocal(ts);
-          if(isManual) toast('Gistへ保存しました ✓');
-        } else {
-          if(isManual) toast('保存失敗: API制限またはエラー (' + res.status + ')');
-        }
+        if(res.ok){ state.sync.lastSyncAt=ts; saveLocal(); document.getElementById('gistStatusText').textContent=formatIsoLocal(ts); if(isManual) toast('Gistへ保存しました ✓'); }
+        else { if(isManual) toast('保存失敗: API制限等 ('+res.status+')'); }
       }).catch(function(e){ syncInFlight=false; if(isManual) toast('保存通信エラー'); });
     }
 
@@ -1293,23 +1279,18 @@
       if(!t||!id) return;
       if(syncInFlight) return; syncInFlight=true;
       if(isManual) document.getElementById('gistStatusText').textContent='取得中...';
-
       fetch('https://api.github.com/gists/'+id, { headers:{'Accept':'application/vnd.github+json', 'Authorization':'token '+t} })
       .then(function(res){return res.json()}).then(function(data){
         syncInFlight=false;
         if(data.files && data.files['the-calendar-sync.json']){
           try{
             var remote = JSON.parse(data.files['the-calendar-sync.json'].content);
-            var localWConan = state.profiles.conan.wallpaper; var localWKaori = state.profiles.kaori.wallpaper;
-            
-            // ★最新版ですブロックを完全撤廃し、強制上書き(Last Write Wins)
+            var wC = state.profiles.conan.wallpaper; var wK = state.profiles.kaori.wallpaper;
             state = Object.assign({}, state, remote);
-            if(localWConan) state.profiles.conan.wallpaper = localWConan; 
-            if(localWKaori) state.profiles.kaori.wallpaper = localWKaori; 
-            saveLocal();
-            document.getElementById('gistStatusText').textContent=formatIsoLocal(state.sync.lastSyncAt);
+            if(wC) state.profiles.conan.wallpaper = wC; if(wK) state.profiles.kaori.wallpaper = wK;
+            saveLocal(); document.getElementById('gistStatusText').textContent=formatIsoLocal(state.sync.lastSyncAt);
             setView(state.view); updateSidebar();
-            if(isManual) toast('Gistから取得しました ✓');
+            if(isManual) toast('Gistから強制取得しました ✓');
           }catch(e){ if(isManual) toast('データ解析エラー'); }
         }
       }).catch(function(e){ syncInFlight=false; if(isManual) toast('取得通信エラー'); });
